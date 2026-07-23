@@ -1,0 +1,6 @@
+{
+  "name": "Petrol Pump Management",
+  "description": "Elite fuel station management software tracking shifts, meter readings, separate data for Machines 795 and 796, sales types, tasks, and detailed reports with robust role-based access control.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

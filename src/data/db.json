@@ -1,0 +1,755 @@
+{
+  "users": [
+    {
+      "id": "u1",
+      "username": "SIDDHARTH",
+      "password": "SIDDHARTH123",
+      "role": "Owner",
+      "name": "SIDDHARTH DAPAKRA",
+      "contact": "+91 9039670621",
+      "status": "active"
+    },
+    {
+      "id": "u2",
+      "username": "manager",
+      "password": "manager123",
+      "role": "Manager",
+      "name": "Sanjay Verma",
+      "contact": "+91 87654 32109",
+      "status": "active"
+    },
+    {
+      "id": "u3",
+      "username": "worker1",
+      "password": "worker123",
+      "role": "Worker",
+      "name": "Amit Kumar",
+      "contact": "+91 76543 21098",
+      "status": "active"
+    },
+    {
+      "id": "u4",
+      "username": "worker2",
+      "password": "worker123",
+      "role": "Worker",
+      "name": "Rohan Singh",
+      "contact": "+91 65432 10987",
+      "status": "active"
+    }
+  ],
+  "fuelRates": [
+    {
+      "fuelType": "petrol",
+      "rate": 116.04,
+      "updatedBy": "SIDDHARTH",
+      "updatedAt": "2026-07-19T08:17:23.416Z"
+    },
+    {
+      "fuelType": "diesel",
+      "rate": 100.73,
+      "updatedBy": "SIDDHARTH",
+      "updatedAt": "2026-07-19T08:17:23.416Z"
+    }
+  ],
+  "meterState": {
+    "795": {
+      "petrol": 15450.5,
+      "diesel": 28830.2
+    },
+    "796": {
+      "petrol": 10620.1,
+      "diesel": 19780.8
+    }
+  },
+  "shifts": [
+    {
+      "id": "sh_1784450358315",
+      "date": "2026-07-19",
+      "shiftName": "Evening",
+      "machineId": "795",
+      "workerId": "u3",
+      "status": "open",
+      "openedAt": "2026-07-19T08:39:18.315Z",
+      "petrolStartReading": 15450.5,
+      "dieselStartReading": 28830.2,
+      "cashCollected": 0,
+      "onlineCollected": 0,
+      "creditCollected": 0,
+      "totalCollected": 0
+    },
+    {
+      "id": "sh_1784449771352",
+      "date": "2026-07-19",
+      "shiftName": "Evening",
+      "machineId": "796",
+      "workerId": "u3",
+      "status": "open",
+      "openedAt": "2026-07-19T08:29:31.352Z",
+      "petrolStartReading": 10620.1,
+      "dieselStartReading": 19780.8,
+      "cashCollected": 0,
+      "onlineCollected": 0,
+      "creditCollected": 0,
+      "totalCollected": 0
+    },
+    {
+      "id": "sh_1784449748125",
+      "date": "2026-07-19",
+      "shiftName": "Morning",
+      "machineId": "795",
+      "workerId": "u3",
+      "status": "closed",
+      "openedAt": "2026-07-19T08:29:08.125Z",
+      "petrolStartReading": 15450.5,
+      "dieselStartReading": 28830.2,
+      "cashCollected": 10000,
+      "onlineCollected": 10000,
+      "creditCollected": 10000,
+      "totalCollected": 30000,
+      "closedAt": "2026-07-19T08:38:34.919Z",
+      "petrolEndReading": 15450.5,
+      "dieselEndReading": 28830.2,
+      "petrolLitersSold": 0,
+      "dieselLitersSold": 0,
+      "expectedAmount": 0,
+      "shortExcessAmount": 30000,
+      "notes": "good",
+      "approvedBy": "SIDDHARTH",
+      "approvedAt": "2026-07-19T08:40:46.966Z"
+    },
+    {
+      "id": "sh_1",
+      "date": "2026-07-15",
+      "shiftName": "Morning",
+      "machineId": "795",
+      "workerId": "u3",
+      "status": "closed",
+      "openedAt": "2026-07-15T06:00:00.000Z",
+      "closedAt": "2026-07-15T14:00:00.000Z",
+      "petrolStartReading": 15000,
+      "petrolEndReading": 15150,
+      "dieselStartReading": 28000,
+      "dieselEndReading": 28250,
+      "petrolLitersSold": 150,
+      "dieselLitersSold": 250,
+      "expectedAmount": 38762.5,
+      "cashCollected": 15000,
+      "onlineCollected": 18000,
+      "creditCollected": 5762.5,
+      "totalCollected": 38762.5,
+      "shortExcessAmount": 0,
+      "notes": "Smooth shift, no mismatch.",
+      "approvedBy": "SIDDHARTH DAPAKRA",
+      "approvedAt": "2026-07-15T15:00:00.000Z"
+    },
+    {
+      "id": "sh_2",
+      "date": "2026-07-15",
+      "shiftName": "Morning",
+      "machineId": "796",
+      "workerId": "u4",
+      "status": "closed",
+      "openedAt": "2026-07-15T06:00:00.000Z",
+      "closedAt": "2026-07-15T14:00:00.000Z",
+      "petrolStartReading": 10200,
+      "petrolEndReading": 10320,
+      "dieselStartReading": 19300,
+      "dieselEndReading": 19480,
+      "petrolLitersSold": 120,
+      "dieselLitersSold": 180,
+      "expectedAmount": 29160,
+      "cashCollected": 12000,
+      "onlineCollected": 12000,
+      "creditCollected": 5160,
+      "totalCollected": 29160,
+      "shortExcessAmount": 0,
+      "notes": "Rainy day, slightly lower sales.",
+      "approvedBy": "SIDDHARTH DAPAKRA",
+      "approvedAt": "2026-07-15T15:05:00.000Z"
+    },
+    {
+      "id": "sh_3",
+      "date": "2026-07-16",
+      "shiftName": "Evening",
+      "machineId": "795",
+      "workerId": "u3",
+      "status": "closed",
+      "openedAt": "2026-07-16T14:00:00.000Z",
+      "closedAt": "2026-07-16T22:00:00.000Z",
+      "petrolStartReading": 15150,
+      "petrolEndReading": 15320,
+      "dieselStartReading": 28250,
+      "dieselEndReading": 28550,
+      "petrolLitersSold": 170,
+      "dieselLitersSold": 300,
+      "expectedAmount": 45472.5,
+      "cashCollected": 18500,
+      "onlineCollected": 20000,
+      "creditCollected": 7000,
+      "totalCollected": 45500,
+      "shortExcessAmount": 27.5,
+      "notes": "Extra cash received in tips added to register.",
+      "approvedBy": "Sanjay Verma",
+      "approvedAt": "2026-07-16T22:30:00.000Z"
+    },
+    {
+      "id": "sh_4",
+      "date": "2026-07-16",
+      "shiftName": "Evening",
+      "machineId": "796",
+      "workerId": "u4",
+      "status": "closed",
+      "openedAt": "2026-07-16T14:00:00.000Z",
+      "closedAt": "2026-07-16T22:00:00.000Z",
+      "petrolStartReading": 10320,
+      "petrolEndReading": 10450,
+      "dieselStartReading": 19480,
+      "dieselEndReading": 19650,
+      "petrolLitersSold": 130,
+      "dieselLitersSold": 170,
+      "expectedAmount": 29277.5,
+      "cashCollected": 11000,
+      "onlineCollected": 15000,
+      "creditCollected": 3200,
+      "totalCollected": 29200,
+      "shortExcessAmount": -77.5,
+      "notes": "Slightly short on diesel cash calculations.",
+      "approvedBy": "Sanjay Verma",
+      "approvedAt": "2026-07-16T22:35:00.000Z"
+    },
+    {
+      "id": "sh_5",
+      "date": "2026-07-17",
+      "shiftName": "Morning",
+      "machineId": "795",
+      "workerId": "u3",
+      "status": "closed",
+      "openedAt": "2026-07-17T06:00:00.000Z",
+      "closedAt": "2026-07-17T14:00:00.000Z",
+      "petrolStartReading": 15320,
+      "petrolEndReading": 15450.5,
+      "dieselStartReading": 28550,
+      "dieselEndReading": 28830.2,
+      "petrolLitersSold": 130.5,
+      "dieselLitersSold": 280.2,
+      "expectedAmount": 39522.62,
+      "cashCollected": 16000,
+      "onlineCollected": 19000,
+      "creditCollected": 4500,
+      "totalCollected": 39500,
+      "shortExcessAmount": -22.62,
+      "notes": "Fuel audit conducted.",
+      "approvedBy": "SIDDHARTH DAPAKRA",
+      "approvedAt": "2026-07-17T14:30:00.000Z"
+    },
+    {
+      "id": "sh_6",
+      "date": "2026-07-17",
+      "shiftName": "Morning",
+      "machineId": "796",
+      "workerId": "u4",
+      "status": "closed",
+      "openedAt": "2026-07-17T06:00:00.000Z",
+      "closedAt": "2026-07-17T14:00:00.000Z",
+      "petrolStartReading": 10450,
+      "petrolEndReading": 10620.1,
+      "dieselStartReading": 19650,
+      "dieselEndReading": 19780.8,
+      "petrolLitersSold": 170.1,
+      "dieselLitersSold": 130.8,
+      "expectedAmount": 29831.92,
+      "cashCollected": 13000,
+      "onlineCollected": 12000,
+      "creditCollected": 4831.92,
+      "totalCollected": 29831.92,
+      "shortExcessAmount": 0,
+      "notes": "All correct.",
+      "approvedBy": "SIDDHARTH DAPAKRA",
+      "approvedAt": "2026-07-17T14:35:00.000Z"
+    }
+  ],
+  "sales": [
+    {
+      "id": "s_1784450114985",
+      "date": "2026-07-19",
+      "shiftId": "sh_1784449771352",
+      "machineId": "796",
+      "fuelType": "diesel",
+      "liters": 1000,
+      "amount": 100730,
+      "paymentMethod": "credit",
+      "customerName": "Royal Travels Agency",
+      "workerId": "u3",
+      "createdAt": "2026-07-19T08:35:14.985Z",
+      "remarks": ""
+    },
+    {
+      "id": "s_1784450098141",
+      "date": "2026-07-19",
+      "shiftId": "sh_1784449771352",
+      "machineId": "796",
+      "fuelType": "diesel",
+      "liters": 100,
+      "amount": 10073,
+      "paymentMethod": "online",
+      "workerId": "u3",
+      "createdAt": "2026-07-19T08:34:58.141Z",
+      "remarks": ""
+    },
+    {
+      "id": "s_1784450074606",
+      "date": "2026-07-19",
+      "shiftId": "sh_1784449771352",
+      "machineId": "796",
+      "fuelType": "diesel",
+      "liters": 200,
+      "amount": 20146,
+      "paymentMethod": "cash",
+      "workerId": "u3",
+      "createdAt": "2026-07-19T08:34:34.606Z",
+      "remarks": ""
+    },
+    {
+      "id": "s_1",
+      "date": "2026-07-15",
+      "shiftId": "sh_1",
+      "machineId": "795",
+      "fuelType": "petrol",
+      "liters": 150,
+      "amount": 15637.5,
+      "paymentMethod": "cash",
+      "workerId": "u3",
+      "createdAt": "2026-07-15T08:30:00.000Z",
+      "remarks": "Regular taxi fleet"
+    },
+    {
+      "id": "s_2",
+      "date": "2026-07-15",
+      "shiftId": "sh_1",
+      "machineId": "795",
+      "fuelType": "diesel",
+      "liters": 250,
+      "amount": 23125,
+      "paymentMethod": "online",
+      "workerId": "u3",
+      "createdAt": "2026-07-15T11:45:00.000Z",
+      "remarks": "Truck fueling"
+    },
+    {
+      "id": "s_3",
+      "date": "2026-07-15",
+      "shiftId": "sh_2",
+      "machineId": "796",
+      "fuelType": "petrol",
+      "liters": 120,
+      "amount": 12510,
+      "paymentMethod": "cash",
+      "workerId": "u4",
+      "createdAt": "2026-07-15T09:00:00.000Z"
+    },
+    {
+      "id": "s_4",
+      "date": "2026-07-15",
+      "shiftId": "sh_2",
+      "machineId": "796",
+      "fuelType": "diesel",
+      "liters": 180,
+      "amount": 16650,
+      "paymentMethod": "online",
+      "workerId": "u4",
+      "createdAt": "2026-07-15T13:00:00.000Z"
+    },
+    {
+      "id": "s_5",
+      "date": "2026-07-16",
+      "shiftId": "sh_3",
+      "machineId": "795",
+      "fuelType": "petrol",
+      "liters": 170,
+      "amount": 17722.5,
+      "paymentMethod": "cash",
+      "workerId": "u3",
+      "createdAt": "2026-07-16T15:30:00.000Z"
+    },
+    {
+      "id": "s_6",
+      "date": "2026-07-16",
+      "shiftId": "sh_3",
+      "machineId": "795",
+      "fuelType": "diesel",
+      "liters": 300,
+      "amount": 27750,
+      "paymentMethod": "online",
+      "workerId": "u3",
+      "createdAt": "2026-07-16T19:00:00.000Z"
+    },
+    {
+      "id": "s_7",
+      "date": "2026-07-16",
+      "shiftId": "sh_4",
+      "machineId": "796",
+      "fuelType": "petrol",
+      "liters": 130,
+      "amount": 13552.5,
+      "paymentMethod": "cash",
+      "workerId": "u4",
+      "createdAt": "2026-07-16T16:00:00.000Z"
+    },
+    {
+      "id": "s_8",
+      "date": "2026-07-16",
+      "shiftId": "sh_4",
+      "machineId": "796",
+      "fuelType": "diesel",
+      "liters": 170,
+      "amount": 15725,
+      "paymentMethod": "online",
+      "workerId": "u4",
+      "createdAt": "2026-07-16T21:15:00.000Z"
+    }
+  ],
+  "creditCustomers": [
+    {
+      "id": "cc_1",
+      "name": "Royal Travels Agency",
+      "contact": "+91 99999 88888",
+      "creditLimit": 100000,
+      "balance": 115730
+    },
+    {
+      "id": "cc_2",
+      "name": "Express Logistics Corp",
+      "contact": "+91 88888 77777",
+      "creditLimit": 200000,
+      "balance": 45500
+    },
+    {
+      "id": "cc_3",
+      "name": "Sharma Transports Pvt Ltd",
+      "contact": "+91 77777 66666",
+      "creditLimit": 150000,
+      "balance": 12450
+    }
+  ],
+  "creditTransactions": [
+    {
+      "id": "ct_1784450114985",
+      "customerId": "cc_1",
+      "date": "2026-07-19",
+      "type": "charge",
+      "amount": 100730,
+      "shiftId": "sh_1784449771352",
+      "remarks": "Fuel charge for 1000L of diesel",
+      "recordedBy": "worker1"
+    },
+    {
+      "id": "ct_1784449264317",
+      "customerId": "cc_1",
+      "date": "2026-07-19",
+      "type": "payment",
+      "amount": 10000,
+      "remarks": "CASH",
+      "recordedBy": "SIDDHARTH"
+    },
+    {
+      "id": "ct_1",
+      "customerId": "cc_1",
+      "date": "2026-07-15",
+      "type": "charge",
+      "amount": 15000,
+      "shiftId": "sh_1",
+      "remarks": "Fuel charge for Bus DL-01-A-1234",
+      "recordedBy": "Amit Kumar"
+    },
+    {
+      "id": "ct_2",
+      "customerId": "cc_2",
+      "date": "2026-07-15",
+      "type": "charge",
+      "amount": 25000,
+      "shiftId": "sh_2",
+      "remarks": "Truck MH-12-Q-4567 diesel fill",
+      "recordedBy": "Rohan Singh"
+    },
+    {
+      "id": "ct_3",
+      "customerId": "cc_1",
+      "date": "2026-07-16",
+      "type": "payment",
+      "amount": 10000,
+      "remarks": "Cheque payment received",
+      "recordedBy": "SIDDHARTH DAPAKRA"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t_1",
+      "title": "Machine 795 Petrol Nozzle Maintenance",
+      "description": "Examine petrol nozzle flow and calibrate the start-stop latch. Report flow status.",
+      "assignedTo": "u3",
+      "status": "approved",
+      "createdBy": "u1",
+      "submissionNotes": "Successfully calibrated. Smooth flow at 38 l/min. Test delivery of 5L was exactly 5.00L.",
+      "remarks": "Great work, verified during audits.",
+      "createdAt": "2026-07-15T07:00:00.000Z",
+      "submittedAt": "2026-07-15T13:45:00.000Z",
+      "completedAt": "2026-07-15T15:00:00.000Z"
+    },
+    {
+      "id": "t_2",
+      "title": "Compund Cleaning & Fire Bucket Audit",
+      "description": "Ensure water and sand levels in fire buckets are adequate. Clean compound of Machine 796.",
+      "assignedTo": "u4",
+      "status": "submitted",
+      "createdBy": "u2",
+      "submissionNotes": "Sand buckets refilled. Area cleaned, safety signs updated.",
+      "createdAt": "2026-07-16T15:00:00.000Z",
+      "submittedAt": "2026-07-16T21:30:00.000Z"
+    },
+    {
+      "id": "t_3",
+      "title": "Weekly Fuel Quality Test",
+      "description": "Measure Petrol and Diesel density using hydrometer and record values. Needs approval.",
+      "assignedTo": "u2",
+      "status": "pending",
+      "createdBy": "u1",
+      "createdAt": "2026-07-17T09:00:00.000Z"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "a_1784450179704_6c86s",
+      "timestamp": "2026-07-19T08:36:19.704Z",
+      "userId": "u2",
+      "username": "manager",
+      "role": "Manager",
+      "action": "USER_LOGIN",
+      "details": "Sanjay Verma logged in successfully."
+    },
+    {
+      "id": "a_1784450151453_g33ut",
+      "timestamp": "2026-07-19T08:35:51.453Z",
+      "userId": "u1",
+      "username": "SIDDHARTH",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1784449950956_ft5gv",
+      "timestamp": "2026-07-19T08:32:30.956Z",
+      "userId": "u3",
+      "username": "worker1",
+      "role": "Worker",
+      "action": "USER_LOGIN",
+      "details": "Amit Kumar logged in successfully."
+    },
+    {
+      "id": "a_1784449662652_hetko",
+      "timestamp": "2026-07-19T08:27:42.652Z",
+      "userId": "u2",
+      "username": "manager",
+      "role": "Manager",
+      "action": "USER_LOGIN",
+      "details": "Sanjay Verma logged in successfully."
+    },
+    {
+      "id": "a_1784448955996_g0vb9",
+      "timestamp": "2026-07-19T08:15:55.996Z",
+      "userId": "u1",
+      "username": "SIDDHARTH",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1784448771082_bji6w",
+      "timestamp": "2026-07-19T08:12:51.082Z",
+      "userId": "u2",
+      "username": "manager",
+      "role": "Manager",
+      "action": "USER_LOGIN",
+      "details": "Sanjay Verma logged in successfully."
+    },
+    {
+      "id": "a_1784447986325_x6v90",
+      "timestamp": "2026-07-19T07:59:46.325Z",
+      "userId": "u1",
+      "username": "SIDDHARTH",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1784386451587_jcmgf",
+      "timestamp": "2026-07-18T14:54:11.587Z",
+      "userId": "u1",
+      "username": "SIDDHARTH",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1784386399670_cgykj",
+      "timestamp": "2026-07-18T14:53:19.670Z",
+      "userId": "u3",
+      "username": "worker1",
+      "role": "Worker",
+      "action": "USER_LOGIN",
+      "details": "Amit Kumar logged in successfully."
+    },
+    {
+      "id": "a_1784386399661_4g80m",
+      "timestamp": "2026-07-18T14:53:19.661Z",
+      "userId": "u3",
+      "username": "worker1",
+      "role": "Worker",
+      "action": "USER_LOGIN",
+      "details": "Amit Kumar logged in successfully."
+    },
+    {
+      "id": "a_1784386386043_42c1y",
+      "timestamp": "2026-07-18T14:53:06.043Z",
+      "userId": "u2",
+      "username": "manager",
+      "role": "Manager",
+      "action": "USER_LOGIN",
+      "details": "Sanjay Verma logged in successfully."
+    },
+    {
+      "id": "a_1784386367513_5j9b2",
+      "timestamp": "2026-07-18T14:52:47.513Z",
+      "userId": "u2",
+      "username": "manager",
+      "role": "Manager",
+      "action": "USER_LOGIN",
+      "details": "Sanjay Verma logged in successfully."
+    },
+    {
+      "id": "a_1784386143096_h8bwc",
+      "timestamp": "2026-07-18T14:49:03.096Z",
+      "userId": "u1",
+      "username": "SIDDHARTH",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1784371776822_54jhb",
+      "timestamp": "2026-07-18T10:49:36.822Z",
+      "userId": "u1",
+      "username": "SIDDHARTH",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1784366709969_v45pu",
+      "timestamp": "2026-07-18T09:25:09.969Z",
+      "userId": "u1",
+      "username": "owner",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1784366613736_dx0bf",
+      "timestamp": "2026-07-18T09:23:33.736Z",
+      "userId": "u1",
+      "username": "owner",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1784365381950_utvic",
+      "timestamp": "2026-07-18T09:03:01.950Z",
+      "userId": "u2",
+      "username": "manager",
+      "role": "Manager",
+      "action": "USER_LOGIN",
+      "details": "Sanjay Verma logged in successfully."
+    },
+    {
+      "id": "a_1784365311265_8vqco",
+      "timestamp": "2026-07-18T09:01:51.265Z",
+      "userId": "u1",
+      "username": "owner",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1784364610092_y9rj5",
+      "timestamp": "2026-07-18T08:50:10.092Z",
+      "userId": "u1",
+      "username": "owner",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1784363941576_eaeju",
+      "timestamp": "2026-07-18T08:39:01.576Z",
+      "userId": "u1",
+      "username": "owner",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1784363552109_8143g",
+      "timestamp": "2026-07-18T08:32:32.109Z",
+      "userId": "u1",
+      "username": "owner",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1784362483283_415nf",
+      "timestamp": "2026-07-18T08:14:43.283Z",
+      "userId": "u1",
+      "username": "owner",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1784362153241_0hrgw",
+      "timestamp": "2026-07-18T08:09:13.241Z",
+      "userId": "u3",
+      "username": "worker1",
+      "role": "Worker",
+      "action": "USER_LOGIN",
+      "details": "Amit Kumar logged in successfully."
+    },
+    {
+      "id": "a_1784362046179_cw4fe",
+      "timestamp": "2026-07-18T08:07:26.179Z",
+      "userId": "u1",
+      "username": "owner",
+      "role": "Owner",
+      "action": "USER_LOGIN",
+      "details": "SIDDHARTH DAPAKRA logged in successfully."
+    },
+    {
+      "id": "a_1",
+      "timestamp": "2026-07-15T06:00:00.000Z",
+      "userId": "u3",
+      "username": "worker1",
+      "role": "Worker",
+      "action": "SHIFT_OPENED",
+      "details": "Opened morning shift for Machine 795."
+    },
+    {
+      "id": "a_2",
+      "timestamp": "2026-07-15T15:00:00.000Z",
+      "userId": "u1",
+      "username": "owner",
+      "role": "Owner",
+      "action": "SHIFT_APPROVED",
+      "details": "Approved Shift sh_1 (Amit Kumar - Machine 795)."
+    }
+  ]
+}
