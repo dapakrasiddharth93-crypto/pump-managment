@@ -7,11 +7,12 @@ import React, { useState, useEffect } from "react";
 import { 
   Users, Fuel, CreditCard, ShieldAlert, FileText, CheckCircle, 
   XCircle, ToggleLeft, ToggleRight, UserPlus, Save, Plus, 
-  Trash2, DollarSign, Activity, Settings, Database, Upload, AlertTriangle, Calendar, Filter, Eye
+  Trash2, DollarSign, Activity, Settings, Database, Upload, AlertTriangle, Calendar, Filter, Eye, Camera, Image as ImageIcon, Download, Search, Check, ExternalLink
 } from "lucide-react";
 import { User, FuelRate, Shift, CreditCustomer, CreditTransaction, AuditLog, Task } from "../types.js";
 import { api } from "../utils/api.js";
 import ExportButton from "./ExportButton.js";
+import CustomerLedgerModal from "./CustomerLedgerModal.js";
 
 interface OwnerViewProps {
   currentUser: User;
@@ -29,6 +30,12 @@ export default function OwnerView({ currentUser, onRefreshStats }: OwnerViewProp
   const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  
+  // Modal for viewing online payment proof photo
+  const [viewingProofPhoto, setViewingProofPhoto] = useState<{ image: string; amount: number; ref?: string } | null>(null);
+  
+  // Modal for viewing detailed credit ledger for a single customer
+  const [viewingCustomerLedger, setViewingCustomerLedger] = useState<CreditCustomer | null>(null);
   
   // Fuel rates edit state
   const [editingRatePetrol, setEditingRatePetrol] = useState<number>(0);
@@ -204,6 +211,21 @@ export default function OwnerView({ currentUser, onRefreshStats }: OwnerViewProp
     } catch (err: any) {
       showFeedback(err.message, 'error');
     }
+  };
+
+  // Direct Record Payment for Customer Ledger Modal
+  const handleRecordPaymentDirect = async (customerId: string, amount: number, remarks: string) => {
+    await api.recordCreditPayment({
+      customerId,
+      amount,
+      remarks,
+      currentUserId: currentUser.id,
+      currentUsername: currentUser.username,
+      currentUserRole: currentUser.role
+    });
+    showFeedback("Customer credit payment successfully logged.");
+    await loadData();
+    onRefreshStats();
   };
 
   // Create Task
@@ -682,20 +704,39 @@ export default function OwnerView({ currentUser, onRefreshStats }: OwnerViewProp
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 className="font-display font-bold text-lg">Credit Customer Ledger & Parties</h3>
-              <p className="text-xs text-neutral-500">Manage credit limits, view balances, and record payments.</p>
+              <p className="text-xs text-neutral-500">Manage credit limits, view customer statements, and download detailed ledgers.</p>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <ExportButton
+                filename="all_credit_customers_ledger"
+                title="Entire Credit Ledger - All Customers"
+                headers={["Customer Name", "Contact", "Date", "Type", "Remarks", "Amount (INR)", "Recorded By"]}
+                keys={["CustomerName", "Contact", "Date", "Type", "Remarks", "Amount", "RecordedBy"]}
+                data={creditTransactions.map(tx => {
+                  const cust = creditCustomers.find(c => c.id === tx.customerId);
+                  return {
+                    CustomerName: cust ? cust.name : tx.customerId,
+                    Contact: cust ? cust.contact : "-",
+                    Date: tx.date,
+                    Type: tx.type === 'charge' ? 'CHARGE (Fuel)' : 'PAYMENT (Received)',
+                    Remarks: tx.remarks || "-",
+                    Amount: tx.amount,
+                    RecordedBy: tx.recordedBy
+                  };
+                })}
+              />
+
               <button
                 onClick={() => setNewCustomerOpen(!newCustomerOpen)}
-                className="py-2 px-3 rounded-xl bg-indigo-600 text-white font-bold text-xs flex items-center gap-1"
+                className="py-2 px-3 rounded-xl bg-indigo-600 text-white font-bold text-xs flex items-center gap-1 shadow-sm hover:bg-indigo-700"
               >
                 <Plus className="w-4 h-4" /> Add Credit Party
               </button>
 
               <button
                 onClick={() => setRecordPaymentOpen(!recordPaymentOpen)}
-                className="py-2 px-3 rounded-xl bg-emerald-600 text-white font-bold text-xs flex items-center gap-1"
+                className="py-2 px-3 rounded-xl bg-emerald-600 text-white font-bold text-xs flex items-center gap-1 shadow-sm hover:bg-emerald-700"
               >
                 <DollarSign className="w-4 h-4" /> Record Payment
               </button>
@@ -736,20 +777,56 @@ export default function OwnerView({ currentUser, onRefreshStats }: OwnerViewProp
                   <th className="p-3">Contact</th>
                   <th className="p-3">Credit Limit</th>
                   <th className="p-3">Outstanding Balance</th>
+                  <th className="p-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {creditCustomers.map(c => (
-                  <tr key={c.id} className="border-b">
+                  <tr key={c.id} className="border-b hover:bg-neutral-50/50 dark:hover:bg-zinc-800/20">
                     <td className="p-3 font-bold">{c.name}</td>
                     <td className="p-3 text-neutral-500">{c.contact}</td>
                     <td className="p-3">₹{c.creditLimit.toLocaleString()}</td>
                     <td className="p-3 font-bold text-rose-600 dark:text-rose-400">₹{c.balance.toLocaleString()}</td>
+                    <td className="p-3 text-right space-x-2">
+                      <button
+                        onClick={() => setViewingCustomerLedger(c)}
+                        className="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold text-[11px] inline-flex items-center gap-1 hover:bg-indigo-700 shadow-sm"
+                      >
+                        <Eye className="w-3 h-3" /> View Ledger
+                      </button>
+                      <ExportButton
+                        filename={`ledger_${c.name.replace(/\s+/g, '_')}`}
+                        title={`Download Ledger - ${c.name}`}
+                        headers={["Date", "Type", "Remarks", "Charge (INR)", "Payment (INR)", "Recorded By"]}
+                        keys={["Date", "Type", "Remarks", "Charge", "Payment", "RecordedBy"]}
+                        data={creditTransactions
+                          .filter(t => t.customerId === c.id)
+                          .map(t => ({
+                            Date: t.date,
+                            Type: t.type === 'charge' ? 'Charge (Fuel Purchase)' : 'Payment Received',
+                            Remarks: t.remarks || "-",
+                            Charge: t.type === 'charge' ? t.amount : 0,
+                            Payment: t.type === 'payment' ? t.amount : 0,
+                            RecordedBy: t.recordedBy
+                          }))}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
+          {/* Customer Ledger Detail Modal */}
+          {viewingCustomerLedger && (
+            <CustomerLedgerModal
+              customer={viewingCustomerLedger}
+              transactions={creditTransactions}
+              shifts={shifts}
+              onClose={() => setViewingCustomerLedger(null)}
+              onRecordPayment={handleRecordPaymentDirect}
+            />
+          )}
         </div>
       )}
 
@@ -887,27 +964,134 @@ export default function OwnerView({ currentUser, onRefreshStats }: OwnerViewProp
       {/* View Shift Detail Modal */}
       {selectedShiftModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 p-6 space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="font-bold text-base">Shift Audit Detail #{selectedShiftModal.id}</h3>
-              <button onClick={() => setSelectedShiftModal(null)} className="text-neutral-400 font-bold hover:text-neutral-600">✕</button>
+          <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b border-neutral-200 dark:border-zinc-800 pb-3">
+              <div>
+                <h3 className="font-bold text-base text-indigo-600 dark:text-indigo-400">Shift Audit Detail #{selectedShiftModal.id}</h3>
+                <p className="text-[11px] text-neutral-400">Date: {selectedShiftModal.date} • Machine #{selectedShiftModal.machineId} ({selectedShiftModal.shiftName} Shift)</p>
+              </div>
+              <button onClick={() => setSelectedShiftModal(null)} className="text-neutral-400 font-bold hover:text-neutral-600 p-1">✕</button>
             </div>
 
-            <div className="space-y-2 text-xs">
-              <p><strong>Shift Date:</strong> {selectedShiftModal.date}</p>
-              <p><strong>Shift Name:</strong> {selectedShiftModal.shiftName}</p>
-              <p><strong>Machine:</strong> Machine #{selectedShiftModal.machineId}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs bg-neutral-50 dark:bg-zinc-800/40 p-3.5 rounded-2xl border border-neutral-200 dark:border-zinc-800">
               <p><strong>Worker:</strong> {users.find(u => u.id === selectedShiftModal.workerId)?.name || selectedShiftModal.workerName || selectedShiftModal.workerId}</p>
               <p><strong>Manager Approval:</strong> {selectedShiftModal.managerName || 'Pending'} ({selectedShiftModal.managerApprovedAt ? new Date(selectedShiftModal.managerApprovedAt).toLocaleString() : 'N/A'})</p>
               <p><strong>Owner Audit:</strong> {selectedShiftModal.ownerName || 'Pending'} ({selectedShiftModal.ownerApprovedAt ? new Date(selectedShiftModal.ownerApprovedAt).toLocaleString() : 'N/A'})</p>
               <p><strong>Meter Readings:</strong> Petrol ({selectedShiftModal.petrolStartReading} → {selectedShiftModal.petrolEndReading || 'N/A'}), Diesel ({selectedShiftModal.dieselStartReading} → {selectedShiftModal.dieselEndReading || 'N/A'})</p>
               <p><strong>Expected Tariff:</strong> ₹{(selectedShiftModal.expectedAmount || 0).toLocaleString()}</p>
-              <p><strong>Collected:</strong> Cash ₹{selectedShiftModal.cashCollected || 0}, Online ₹{selectedShiftModal.onlineCollected || 0}, Credit ₹{selectedShiftModal.creditCollected || 0} (Total: ₹{selectedShiftModal.totalCollected || 0})</p>
-              <p><strong>Short / Excess:</strong> ₹{selectedShiftModal.shortExcessAmount || 0}</p>
-              {selectedShiftModal.notes && <p className="p-2 rounded bg-neutral-100 dark:bg-zinc-800"><strong>Notes:</strong> {selectedShiftModal.notes}</p>}
+              <p><strong>Short / Excess:</strong> <span className={`font-bold ${Number(selectedShiftModal.shortExcessAmount || 0) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>₹{selectedShiftModal.shortExcessAmount || 0}</span></p>
+              <p className="md:col-span-2"><strong>Collections:</strong> Cash ₹{selectedShiftModal.cashCollected || 0} • Online ₹{selectedShiftModal.onlineCollected || 0} • Credit ₹{selectedShiftModal.creditCollected || 0} (Total: ₹{selectedShiftModal.totalCollected || 0})</p>
+              {selectedShiftModal.notes && <p className="md:col-span-2 p-2 rounded bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800"><strong>Audit Notes:</strong> {selectedShiftModal.notes}</p>}
             </div>
 
-            <button onClick={() => setSelectedShiftModal(null)} className="w-full py-2 bg-neutral-200 dark:bg-zinc-800 text-xs font-bold rounded-xl">Close</button>
+            {/* Online Payment Proof Photos Breakdown */}
+            <div className="space-y-2 border-t border-neutral-200 dark:border-zinc-800 pt-3">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-neutral-600 dark:text-zinc-400 flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-indigo-500" /> Online Payments Verification & Proof Photos
+              </h4>
+              
+              {selectedShiftModal.onlinePayments && selectedShiftModal.onlinePayments.length > 0 ? (
+                <div className="space-y-2">
+                  {selectedShiftModal.onlinePayments.map((p, idx) => (
+                    <div key={p.id || idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                      <div>
+                        <span className="font-bold text-xs text-indigo-600 dark:text-indigo-400">₹{p.amount.toLocaleString()}</span>
+                        {p.transactionRef && <span className="text-[11px] text-neutral-500 ml-2">UTR/Ref: {p.transactionRef}</span>}
+                      </div>
+
+                      {p.proofImage ? (
+                        <button
+                          type="button"
+                          onClick={() => setViewingProofPhoto({ image: p.proofImage!, amount: p.amount, ref: p.transactionRef })}
+                          className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition-all"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5" /> View Uploaded Proof Photo
+                        </button>
+                      ) : (
+                        <span className="text-[11px] text-neutral-400 italic bg-neutral-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">
+                          No proof photo attached
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-neutral-400 italic p-3 rounded-xl bg-neutral-50 dark:bg-zinc-800/30">
+                  No breakdown or uploaded proof photos recorded for online payments in this shift.
+                </p>
+              )}
+            </div>
+
+            {/* Credit Customer Parties Detailed Breakdown */}
+            <div className="space-y-2 border-t border-neutral-200 dark:border-zinc-800 pt-3">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-neutral-600 dark:text-zinc-400 flex items-center gap-1.5">
+                <CreditCard className="w-3.5 h-3.5 text-rose-500" /> Credit Customer Parties Detailed Breakdown
+              </h4>
+
+              {selectedShiftModal.creditParties && selectedShiftModal.creditParties.length > 0 ? (
+                <div className="overflow-x-auto rounded-xl border border-neutral-200 dark:border-zinc-800">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="bg-neutral-100 dark:bg-zinc-800 border-b border-neutral-200 dark:border-zinc-800">
+                        <th className="p-2.5">Party / Customer Name</th>
+                        <th className="p-2.5 text-right">Credit Amount (₹)</th>
+                        <th className="p-2.5">Vehicle / Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedShiftModal.creditParties.map((cp, idx) => (
+                        <tr key={idx} className="border-b border-neutral-100 dark:border-zinc-800/50">
+                          <td className="p-2.5 font-bold">{cp.customerName}</td>
+                          <td className="p-2.5 text-right font-bold text-rose-600 dark:text-rose-400">₹{cp.amount.toLocaleString()}</td>
+                          <td className="p-2.5 text-neutral-500">{cp.remarks || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-xs text-neutral-400 italic p-3 rounded-xl bg-neutral-50 dark:bg-zinc-800/30">
+                  No individual credit parties recorded for this shift.
+                </p>
+              )}
+            </div>
+
+            <button onClick={() => setSelectedShiftModal(null)} className="w-full py-2.5 bg-neutral-200 dark:bg-zinc-800 hover:bg-neutral-300 dark:hover:bg-zinc-700 text-xs font-bold rounded-xl transition-colors">Close Shift Details</button>
+          </div>
+        </div>
+      )}
+
+      {/* Proof Photo Lightbox Modal */}
+      {viewingProofPhoto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-xl rounded-3xl bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800 p-5 space-y-4 shadow-2xl text-center">
+            <div className="flex justify-between items-center border-b border-neutral-200 dark:border-zinc-800 pb-3 text-left">
+              <div>
+                <h3 className="font-bold text-sm text-indigo-600 dark:text-indigo-400">Online Payment Verification Proof</h3>
+                <p className="text-xs text-neutral-500">Amount: ₹{viewingProofPhoto.amount.toLocaleString()} {viewingProofPhoto.ref && `• UTR: ${viewingProofPhoto.ref}`}</p>
+              </div>
+              <button
+                onClick={() => setViewingProofPhoto(null)}
+                className="text-neutral-400 font-bold hover:text-neutral-600 p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex justify-center bg-neutral-100 dark:bg-zinc-950 p-2 rounded-2xl max-h-[65vh] overflow-hidden">
+              <img
+                src={viewingProofPhoto.image}
+                alt="Payment Proof"
+                className="max-h-[60vh] w-auto object-contain rounded-xl shadow-md"
+              />
+            </div>
+
+            <button
+              onClick={() => setViewingProofPhoto(null)}
+              className="w-full py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl shadow-md hover:bg-indigo-700"
+            >
+              Close Proof Photo
+            </button>
           </div>
         </div>
       )}
