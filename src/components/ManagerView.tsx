@@ -1,11 +1,117 @@
-import React, { useEffect, useState } from "react";
-import { CheckCircle, DollarSign, ListTodo, Plus, Power, Send, Camera, Image as ImageIcon, Trash2, Calendar, UserCheck, AlertCircle } from "lucide-react";
-import { CreditCustomer, FuelRate, Shift, Task, User as UserType, OnlinePaymentEntry, CreditPartyEntry } from "../types.js";
+import React, { useEffect, useState, useRef } from "react";
+import { CheckCircle, DollarSign, ListTodo, Plus, Power, Send, Camera, Image as ImageIcon, Trash2, Calendar, UserCheck, AlertCircle, Eye, FileSpreadsheet, Download, Search } from "lucide-react";
+import { CreditCustomer, FuelRate, Shift, Task, User as UserType, OnlinePaymentEntry, CreditPartyEntry, CreditTransaction } from "../types.js";
 import { api } from "../utils/api.js";
+import ExportButton from "./ExportButton.js";
+import CustomerLedgerModal from "./CustomerLedgerModal.js";
 
 interface ManagerViewProps {
   currentUser: UserType;
   onRefreshStats: () => void;
+}
+
+// Auto-complete & dropdown input component for Credit Customer Parties
+function PartyAutoCompleteInput({
+  value,
+  customers,
+  onChange
+}: {
+  value: string;
+  customers: CreditCustomer[];
+  onChange: (name: string, customerId?: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const filtered = customers.filter(c => 
+    c.name.toLowerCase().includes((value || '').toLowerCase())
+  );
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative w-full" ref={wrapperRef}>
+      <div className="flex gap-1 items-center">
+        {/* Dropdown Select option */}
+        <select
+          value={customers.find(c => c.name.toLowerCase() === (value || '').toLowerCase())?.id || ""}
+          onChange={(e) => {
+            const selectedCust = customers.find(c => c.id === e.target.value);
+            if (selectedCust) {
+              onChange(selectedCust.name, selectedCust.id);
+            } else if (e.target.value === "") {
+              onChange("");
+            }
+          }}
+          className="w-1/3 min-w-[100px] rounded-lg border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
+        >
+          <option value="">-- Select --</option>
+          {customers.map(cust => (
+            <option key={cust.id} value={cust.id}>
+              {cust.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Search / Type Party Name */}
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="Type Party Name..."
+            value={value}
+            onFocus={() => setIsOpen(true)}
+            onChange={(e) => {
+              onChange(e.target.value);
+              setIsOpen(true);
+            }}
+            className="w-full rounded-lg border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-semibold"
+          />
+          <Search className="w-3.5 h-3.5 absolute right-2.5 top-2 text-neutral-400 pointer-events-none" />
+        </div>
+      </div>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-40 max-h-48 overflow-y-auto rounded-xl border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xl py-1 text-xs">
+          {filtered.length > 0 ? (
+            filtered.map((cust) => (
+              <button
+                key={cust.id}
+                type="button"
+                className="w-full px-3 py-2 text-left hover:bg-indigo-50 dark:hover:bg-zinc-800 flex items-center justify-between border-b border-neutral-100 dark:border-zinc-800/40 last:border-0 transition-colors"
+                onMouseDown={(e) => {
+                  e.preventDefault(); // Prevent input blur before onClick fires
+                }}
+                onClick={() => {
+                  onChange(cust.name, cust.id);
+                  setIsOpen(false);
+                }}
+              >
+                <div>
+                  <span className="font-bold text-neutral-800 dark:text-zinc-100 block">{cust.name}</span>
+                  <span className="text-[10px] text-neutral-400">{cust.contact}</span>
+                </div>
+                <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded-full">
+                  Bal: ₹{cust.balance.toLocaleString()}
+                </span>
+              </button>
+            ))
+          ) : (
+            <div className="px-3 py-2 text-neutral-400 text-center text-[11px] italic">
+              No existing customer matches "{value}". New party will be created.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function ManagerView({ currentUser, onRefreshStats }: ManagerViewProps) {
@@ -13,9 +119,13 @@ export default function ManagerView({ currentUser, onRefreshStats }: ManagerView
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [rates, setRates] = useState<FuelRate[]>([]);
   const [customers, setCustomers] = useState<CreditCustomer[]>([]);
+  const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [staff, setStaff] = useState<UserType[]>([]);
   
+  // Single Customer Ledger View Modal state
+  const [viewingCustomerLedger, setViewingCustomerLedger] = useState<CreditCustomer | null>(null);
+
   // Shift creation form
   const [openShiftForm, setOpenShiftForm] = useState({
     shiftName: "Morning" as "Morning" | "Night",
@@ -58,18 +168,20 @@ export default function ManagerView({ currentUser, onRefreshStats }: ManagerView
 
   const loadData = async () => {
     try {
-      const [loadedShifts, loadedRates, loadedCustomers, loadedTasks, users] = await Promise.all([
+      const [loadedShifts, loadedRates, loadedCustomers, loadedTasks, users, loadedTransactions] = await Promise.all([
         api.getShifts(), 
         api.getFuelRates(), 
         api.getCreditCustomers(), 
         api.getTasks(), 
-        api.getUsers()
+        api.getUsers(),
+        api.getCreditTransactions()
       ]);
       setShifts(loadedShifts);
       setRates(loadedRates);
       setCustomers(loadedCustomers);
       setTasks(loadedTasks);
       setStaff(users.filter((user) => user.status === "active"));
+      setCreditTransactions(loadedTransactions);
     } catch (error: any) { 
       showFeedback(error.message || "Failed to load manager dashboard data.", "error"); 
     }
@@ -78,6 +190,20 @@ export default function ManagerView({ currentUser, onRefreshStats }: ManagerView
   useEffect(() => { 
     loadData(); 
   }, [activeTab]);
+
+  const handleRecordPaymentDirect = async (customerId: string, amount: number, remarks: string) => {
+    await api.recordCreditPayment({
+      customerId,
+      amount,
+      remarks,
+      currentUserId: currentUser.id,
+      currentUsername: currentUser.username,
+      currentUserRole: currentUser.role
+    });
+    showFeedback("Customer credit payment successfully logged.");
+    await loadData();
+    onRefreshStats();
+  };
 
   const handleOpenShift = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -139,14 +265,28 @@ export default function ManagerView({ currentUser, onRefreshStats }: ManagerView
   };
 
   // Update credit party row
+  const handleCreditPartyUpdate = (index: number, name: string, customerId?: string) => {
+    setCreditParties(prev => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        customerName: name,
+        ...(customerId ? { customerId } : { customerId: undefined })
+      };
+      const sumCredit = updated.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+      setCloseForm(form => ({ ...form, creditCollected: sumCredit }));
+      return updated;
+    });
+  };
+
   const handleCreditPartyChange = (index: number, field: keyof CreditPartyEntry, value: any) => {
-    const updated = [...creditParties];
-    updated[index] = { ...updated[index], [field]: value };
-    setCreditParties(updated);
-    
-    // Auto sync sum of credit parties to closeForm.creditCollected
-    const sumCredit = updated.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
-    setCloseForm(prev => ({ ...prev, creditCollected: sumCredit }));
+    setCreditParties(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      const sumCredit = updated.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+      setCloseForm(form => ({ ...form, creditCollected: sumCredit }));
+      return updated;
+    });
   };
 
   // Online photo handler (Camera or Gallery)
@@ -508,12 +648,10 @@ export default function ManagerView({ currentUser, onRefreshStats }: ManagerView
                     {creditParties.map((party, index) => (
                       <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-white dark:bg-zinc-900 p-2.5 rounded-xl border border-neutral-200 dark:border-zinc-800">
                         <div className="sm:col-span-5">
-                          <input
-                            type="text"
-                            placeholder="Party / Customer Name"
+                          <PartyAutoCompleteInput
                             value={party.customerName}
-                            onChange={(e) => handleCreditPartyChange(index, "customerName", e.target.value)}
-                            className="w-full rounded-lg border border-neutral-200 dark:border-zinc-800 bg-transparent px-3 py-1.5 text-xs focus:outline-none"
+                            customers={customers}
+                            onChange={(name, customerId) => handleCreditPartyUpdate(index, name, customerId)}
                           />
                         </div>
                         <div className="sm:col-span-3">
@@ -645,27 +783,75 @@ export default function ManagerView({ currentUser, onRefreshStats }: ManagerView
       )}
 
       {activeTab === "credit" && (
-        <div className="overflow-x-auto rounded-2xl border border-neutral-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/40 backdrop-blur-md">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-neutral-200 dark:border-zinc-800 bg-neutral-100/50 dark:bg-zinc-800/50">
-                <th className="p-3">Customer Party</th>
-                <th className="p-3">Contact</th>
-                <th className="p-3">Credit Limit</th>
-                <th className="p-3">Outstanding Balance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {customers.map((customer) => (
-                <tr key={customer.id} className="border-b border-neutral-100 dark:border-zinc-800/50">
-                  <td className="p-3 font-semibold">{customer.name}</td>
-                  <td className="p-3 text-neutral-500">{customer.contact}</td>
-                  <td className="p-3">₹{customer.creditLimit.toLocaleString()}</td>
-                  <td className="p-3 font-bold text-rose-600 dark:text-rose-400">₹{customer.balance.toLocaleString()}</td>
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/50 dark:bg-zinc-900/40 p-4 rounded-2xl border border-neutral-200 dark:border-zinc-800">
+            <div>
+              <h3 className="font-bold text-base">Credit Registry & Statements</h3>
+              <p className="text-xs text-neutral-500">Track outstanding balances, view customer statements, and download credit reports.</p>
+            </div>
+            <ExportButton
+              filename="all_customers_credit_ledger"
+              title="All Customers Credit Ledger"
+              headers={["Customer Name", "Contact", "Date", "Type", "Remarks", "Amount (INR)", "Recorded By"]}
+              keys={["CustomerName", "Contact", "Date", "Type", "Remarks", "Amount", "RecordedBy"]}
+              data={creditTransactions.map(tx => {
+                const cust = customers.find(c => c.id === tx.customerId);
+                return {
+                  CustomerName: cust ? cust.name : tx.customerId,
+                  Contact: cust ? cust.contact : "-",
+                  Date: tx.date,
+                  Type: tx.type === 'charge' ? 'CHARGE (Fuel)' : 'PAYMENT (Received)',
+                  Remarks: tx.remarks || "-",
+                  Amount: tx.amount,
+                  RecordedBy: tx.recordedBy
+                };
+              })}
+            />
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-neutral-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/40 backdrop-blur-md">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-neutral-200 dark:border-zinc-800 bg-neutral-100/50 dark:bg-zinc-800/50">
+                  <th className="p-3">Customer Party</th>
+                  <th className="p-3">Contact</th>
+                  <th className="p-3">Credit Limit</th>
+                  <th className="p-3">Outstanding Balance</th>
+                  <th className="p-3 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {customers.map((customer) => (
+                  <tr key={customer.id} className="border-b border-neutral-100 dark:border-zinc-800/50 hover:bg-neutral-50/50 dark:hover:bg-zinc-800/20">
+                    <td className="p-3 font-semibold">{customer.name}</td>
+                    <td className="p-3 text-neutral-500">{customer.contact}</td>
+                    <td className="p-3">₹{customer.creditLimit.toLocaleString()}</td>
+                    <td className="p-3 font-bold text-rose-600 dark:text-rose-400">₹{customer.balance.toLocaleString()}</td>
+                    <td className="p-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setViewingCustomerLedger(customer)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 shadow-sm transition-all"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> Detailed Ledger
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Customer Ledger Detailed Modal */}
+          {viewingCustomerLedger && (
+            <CustomerLedgerModal
+              customer={viewingCustomerLedger}
+              transactions={creditTransactions}
+              shifts={shifts}
+              onClose={() => setViewingCustomerLedger(null)}
+              onRecordPayment={handleRecordPaymentDirect}
+            />
+          )}
         </div>
       )}
 
