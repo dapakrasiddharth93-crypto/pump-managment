@@ -291,7 +291,8 @@ app.post("/api/shifts/submit-for-manager", (req, res) => {
 app.post("/api/shifts/approve-manager", (req, res) => {
   const { 
     shiftId, petrolEndReading, dieselEndReading, 
-    cashCollected, onlineCollected, creditCollected, 
+    cashCollected, onlineCollected, creditCollected,
+    petrolTesting, dieselTesting, silak,
     notes, onlinePayments, creditParties,
     currentUserId, currentUsername, currentUserRole 
   } = req.body;
@@ -337,7 +338,12 @@ app.post("/api/shifts/approve-manager", (req, res) => {
   const cash = Number(cashCollected || 0);
   const online = Number(onlineCollected || 0);
   const credit = Number(creditCollected || 0);
+  const pTesting = Number(petrolTesting || 0);
+  const dTesting = Number(dieselTesting || 0);
+  const silakVal = Number(silak || 0);
+
   const total = Number((cash + online + credit).toFixed(2));
+  const grandTotalVal = Number((total + pTesting + dTesting + silakVal).toFixed(2));
   const shortExcess = Number((total - expectedAmount).toFixed(2));
 
   shift.status = "approved_by_manager";
@@ -354,6 +360,10 @@ app.post("/api/shifts/approve-manager", (req, res) => {
   shift.onlineCollected = online;
   shift.creditCollected = credit;
   shift.totalCollected = total;
+  shift.petrolTesting = pTesting;
+  shift.dieselTesting = dTesting;
+  shift.silak = silakVal;
+  shift.grandTotal = grandTotalVal;
   shift.shortExcessAmount = shortExcess;
   shift.notes = notes;
 

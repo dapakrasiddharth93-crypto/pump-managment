@@ -63,6 +63,9 @@ export const api = {
     cashCollected: number;
     onlineCollected: number;
     creditCollected: number;
+    petrolTesting?: number;
+    dieselTesting?: number;
+    silak?: number;
     notes?: string;
     onlinePayments?: OnlinePaymentEntry[];
     creditParties?: CreditPartyEntry[];

@@ -142,6 +142,9 @@ export default function ManagerView({ currentUser, onRefreshStats }: ManagerView
     cashCollected: 0,
     onlineCollected: 0,
     creditCollected: 0,
+    petrolTesting: 0,
+    dieselTesting: 0,
+    silak: 0,
     notes: ""
   });
 
@@ -246,6 +249,9 @@ export default function ManagerView({ currentUser, onRefreshStats }: ManagerView
       cashCollected: shift.cashCollected || 0,
       onlineCollected: shift.onlineCollected || 0,
       creditCollected: shift.creditCollected || 0,
+      petrolTesting: shift.petrolTesting || 0,
+      dieselTesting: shift.dieselTesting || 0,
+      silak: shift.silak || 0,
       notes: shift.notes || ""
     });
     setOnlinePayments(shift.onlinePayments || []);
@@ -527,12 +533,13 @@ export default function ManagerView({ currentUser, onRefreshStats }: ManagerView
                   </div>
                 </div>
 
-                <div className="border-t border-emerald-200 dark:border-emerald-800/40 pt-4">
-                  <p className="text-xs font-bold uppercase text-neutral-500 dark:text-zinc-400 mb-3">
-                    Collected Revenue (Cash / Online / Credit - 0 is Allowed)
+                <div className="border-t border-emerald-200 dark:border-emerald-800/40 pt-4 space-y-4">
+                  <p className="text-xs font-bold uppercase text-neutral-500 dark:text-zinc-400">
+                    Collected Revenue & Daily Testing / Silak Breakdown
                   </p>
                   
-                  <div className="grid grid-cols-3 gap-3">
+                  {/* Row 1: Existing Collections (Unchanged) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="text-xs font-bold">Cash Collection (₹)</label>
                       <input 
@@ -562,6 +569,59 @@ export default function ManagerView({ currentUser, onRefreshStats }: ManagerView
                         className="mt-1 w-full rounded-xl border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-bold" 
                       />
                     </div>
+                  </div>
+
+                  {/* Row 2: Petrol Testing, Diesel Testing, Silak */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-amber-700 dark:text-amber-400">Petrol Testing (₹)</label>
+                      <input 
+                        type="number" 
+                        value={closeForm.petrolTesting || ""} 
+                        onChange={(event) => setCloseForm({ ...closeForm, petrolTesting: Number(event.target.value) })} 
+                        className="mt-1 w-full rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 px-3 py-2 text-sm font-bold" 
+                        placeholder="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-amber-700 dark:text-amber-400">Diesel Testing (₹)</label>
+                      <input 
+                        type="number" 
+                        value={closeForm.dieselTesting || ""} 
+                        onChange={(event) => setCloseForm({ ...closeForm, dieselTesting: Number(event.target.value) })} 
+                        className="mt-1 w-full rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 px-3 py-2 text-sm font-bold" 
+                        placeholder="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-indigo-700 dark:text-indigo-400">Silak (₹)</label>
+                      <input 
+                        type="number" 
+                        value={closeForm.silak || ""} 
+                        onChange={(event) => setCloseForm({ ...closeForm, silak: Number(event.target.value) })} 
+                        className="mt-1 w-full rounded-xl border border-indigo-300 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-950/30 px-3 py-2 text-sm font-bold" 
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Grand Net Total Display */}
+                  <div className="rounded-xl border border-emerald-300 dark:border-emerald-800/60 bg-emerald-100/80 dark:bg-emerald-950/60 p-3 flex flex-wrap items-center justify-between gap-2 text-emerald-900 dark:text-emerald-200">
+                    <span className="text-xs font-bold">
+                      Grand Total (Cash + Online + Credit + Petrol Testing + Diesel Testing + Silak):
+                    </span>
+                    <span className="text-base font-extrabold font-display">
+                      ₹{(
+                        Number(closeForm.cashCollected || 0) + 
+                        Number(closeForm.onlineCollected || 0) + 
+                        Number(closeForm.creditCollected || 0) + 
+                        Number(closeForm.petrolTesting || 0) + 
+                        Number(closeForm.dieselTesting || 0) + 
+                        Number(closeForm.silak || 0)
+                      ).toLocaleString()}
+                    </span>
                   </div>
                 </div>
 

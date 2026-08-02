@@ -68,6 +68,10 @@ export interface Shift {
   onlineCollected: number;
   creditCollected: number;
   totalCollected: number;
+  petrolTesting?: number;
+  dieselTesting?: number;
+  silak?: number;
+  grandTotal?: number;
   shortExcessAmount?: number;
   notes?: string;
 
