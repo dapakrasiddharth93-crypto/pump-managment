@@ -733,22 +733,15 @@ export default function OwnerView({ currentUser, onRefreshStats }: OwnerViewProp
 
             <div className="flex flex-wrap items-center gap-2">
               <ExportButton
-                filename="all_credit_customers_ledger"
-                title="Entire Credit Ledger - All Customers"
-                headers={["Customer Name", "Contact", "Date", "Type", "Remarks", "Amount (INR)", "Recorded By"]}
-                keys={["CustomerName", "Contact", "Date", "Type", "Remarks", "Amount", "RecordedBy"]}
-                data={creditTransactions.map(tx => {
-                  const cust = creditCustomers.find(c => c.id === tx.customerId);
-                  return {
-                    CustomerName: cust ? cust.name : tx.customerId,
-                    Contact: cust ? cust.contact : "-",
-                    Date: tx.date,
-                    Type: tx.type === 'charge' ? 'CHARGE (Fuel)' : 'PAYMENT (Received)',
-                    Remarks: tx.remarks || "-",
-                    Amount: tx.amount,
-                    RecordedBy: tx.recordedBy
-                  };
-                })}
+                filename="credit_parties_detailed_ledger"
+                title="Credit Parties Detailed Ledger (Party Balances)"
+                headers={["Party Name", "Contact No.", "Amount Baki (₹)"]}
+                keys={["PartyName", "ContactNo", "AmountBaki"]}
+                data={creditCustomers.map(c => ({
+                  PartyName: c.name,
+                  ContactNo: c.contact || "-",
+                  AmountBaki: `₹${c.balance.toLocaleString()}`
+                }))}
               />
 
               <button

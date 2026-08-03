@@ -7,7 +7,7 @@ import React, { useState, useEffect } from "react";
 import { 
   Fuel, UserCheck, LogOut, Shield, MapPin, Sparkles, Key, 
   BarChart3, RefreshCw, Layers, TrendingUp, HelpCircle, 
-  BookOpen, Zap, DollarSign, Calendar, ListChecks
+  BookOpen, Zap, DollarSign, Calendar, ListChecks, RotateCcw
 } from "lucide-react";
 import ThemeToggle from "./components/ThemeToggle.js";
 import NozzleWidget from "./components/NozzleWidget.js";
@@ -48,6 +48,65 @@ export default function App() {
   const [reportType, setReportType] = useState<'shift' | 'sales' | 'credit'>('shift');
   const [filterMachine, setFilterMachine] = useState<'all' | '795' | '796'>('all');
   const [filterPayment, setFilterPayment] = useState<'all' | 'cash' | 'online' | 'credit'>('all');
+
+  // Top Overview Stats Date Filtration
+  const [statsSingleDate, setStatsSingleDate] = useState('');
+  const [statsStartDate, setStatsStartDate] = useState('');
+  const [statsEndDate, setStatsEndDate] = useState('');
+
+  // Dynamically compute stats based on active date filter for Overview
+  const getDisplayStats = () => {
+    if (!statsSingleDate && !statsStartDate && !statsEndDate) {
+      return stats;
+    }
+    const filteredShifts = shifts.filter(s => {
+      if (s.status !== 'closed' && s.status !== 'approved_by_manager' && s.status !== 'submitted_by_worker') return false;
+      if (statsSingleDate && s.date !== statsSingleDate) return false;
+      if (statsStartDate && s.date < statsStartDate) return false;
+      if (statsEndDate && s.date > statsEndDate) return false;
+      return true;
+    });
+
+    const cash = filteredShifts.reduce((acc, s) => acc + (s.cashCollected || 0), 0);
+    const online = filteredShifts.reduce((acc, s) => acc + (s.onlineCollected || 0), 0);
+    const credit = filteredShifts.reduce((acc, s) => acc + (s.creditCollected || 0), 0);
+    const totalRev = filteredShifts.reduce((acc, s) => acc + (s.totalCollected || (s.cashCollected + s.onlineCollected + s.creditCollected) || 0), 0);
+
+    const petrol = filteredShifts.reduce((acc, s) => acc + (s.petrolLitersSold || 0), 0);
+    const diesel = filteredShifts.reduce((acc, s) => acc + (s.dieselLitersSold || 0), 0);
+
+    const m795 = filteredShifts.filter(s => s.machineId === '795');
+    const m796 = filteredShifts.filter(s => s.machineId === '796');
+
+    return {
+      revenue: {
+        total: Number(totalRev.toFixed(2)),
+        cash: Number(cash.toFixed(2)),
+        online: Number(online.toFixed(2)),
+        credit: Number(credit.toFixed(2)),
+      },
+      fuel: {
+        petrol: Number(petrol.toFixed(2)),
+        diesel: Number(diesel.toFixed(2)),
+        total: Number((petrol + diesel).toFixed(2))
+      },
+      machines: {
+        "795": {
+          petrol: Number(m795.reduce((acc, s) => acc + (s.petrolLitersSold || 0), 0).toFixed(2)),
+          diesel: Number(m795.reduce((acc, s) => acc + (s.dieselLitersSold || 0), 0).toFixed(2)),
+          revenue: Number(m795.reduce((acc, s) => acc + (s.totalCollected || 0), 0).toFixed(2))
+        },
+        "796": {
+          petrol: Number(m796.reduce((acc, s) => acc + (s.petrolLitersSold || 0), 0).toFixed(2)),
+          diesel: Number(m796.reduce((acc, s) => acc + (s.dieselLitersSold || 0), 0).toFixed(2)),
+          revenue: Number(m796.reduce((acc, s) => acc + (s.totalCollected || 0), 0).toFixed(2))
+        }
+      },
+      credit: stats.credit
+    };
+  };
+
+  const displayStats = getDisplayStats();
 
   // Load overall system statistics
   const fetchStats = async () => {
@@ -311,54 +370,121 @@ export default function App() {
         
         {/* Overall System Overview Cards - only available for Owner/Manager */}
         {['Owner', 'Manager'].includes(currentUser.role) && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Cash Collected card */}
-            <div className="rounded-2xl border border-neutral-200/50 dark:border-zinc-800/40 p-4.5 bg-white dark:bg-zinc-900/60 shadow-sm relative overflow-hidden">
-              <span className="text-[10px] text-neutral-400 dark:text-zinc-500 uppercase tracking-wider block font-bold">Total Tariff sales</span>
-              <span className="text-xl font-bold font-display text-neutral-800 dark:text-zinc-100 block mt-1.5">
-                ₹{stats.revenue.total.toLocaleString()}
-              </span>
-              <div className="flex justify-between items-center text-[10px] text-neutral-500 dark:text-zinc-400 mt-2 pt-2 border-t border-neutral-100 dark:border-zinc-800/50">
-                <span>Cash: ₹{stats.revenue.cash.toLocaleString()}</span>
-                <span>Online: ₹{stats.revenue.online.toLocaleString()}</span>
+          <div className="space-y-3">
+            {/* Sales & Fuel Overview Date Filter Bar */}
+            <div className="bg-white dark:bg-zinc-900/80 p-3.5 rounded-2xl border border-neutral-200/60 dark:border-zinc-800/60 shadow-sm flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 font-bold text-neutral-700 dark:text-zinc-200">
+                <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span>Sales & Fuel Overview Date Filter:</span>
+                {(statsSingleDate || statsStartDate || statsEndDate) && (
+                  <span className="px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold text-[10px]">
+                    Filtered Active
+                  </span>
+                )}
               </div>
-            </div>
-
-            {/* Volume sold Card */}
-            <div className="rounded-2xl border border-neutral-200/50 dark:border-zinc-800/40 p-4.5 bg-white dark:bg-zinc-900/60 shadow-sm relative overflow-hidden">
-              <span className="text-[10px] text-neutral-400 dark:text-zinc-500 uppercase tracking-wider block font-bold">Total Fuel Sold</span>
-              <span className="text-xl font-bold font-display text-neutral-800 dark:text-zinc-100 block mt-1.5">
-                {stats.fuel.total.toLocaleString()} <span className="text-xs font-sans text-neutral-400">Liters</span>
-              </span>
-              <div className="flex justify-between items-center text-[10px] text-neutral-500 dark:text-zinc-400 mt-2 pt-2 border-t border-neutral-100 dark:border-zinc-800/50">
-                <span>Petrol: {stats.fuel.petrol.toLocaleString()} L</span>
-                <span>Diesel: {stats.fuel.diesel.toLocaleString()} L</span>
-              </div>
-            </div>
-
-            {/* Credit Ledger Book Card */}
-            <div className="rounded-2xl border border-neutral-200/50 dark:border-zinc-800/40 p-4.5 bg-white dark:bg-zinc-900/60 shadow-sm relative overflow-hidden">
-              <span className="text-[10px] text-neutral-400 dark:text-zinc-500 uppercase tracking-wider block font-bold">Corporate Outstanding</span>
-              <span className="text-xl font-bold font-display text-rose-500 block mt-1.5">
-                ₹{stats.credit.totalOutstanding.toLocaleString()}
-              </span>
-              <div className="flex justify-between items-center text-[10px] text-neutral-500 dark:text-zinc-400 mt-2 pt-2 border-t border-neutral-100 dark:border-zinc-800/50">
-                <span>Registry: {stats.credit.customerCount} accounts</span>
-                <span className="text-rose-400">OMCredit</span>
-              </div>
-            </div>
-
-            {/* Fuel Rates Card */}
-            <div className="rounded-2xl border border-neutral-200/50 dark:border-zinc-800/40 p-4.5 bg-white dark:bg-zinc-900/60 shadow-sm relative overflow-hidden">
-              <span className="text-[10px] text-neutral-400 dark:text-zinc-500 uppercase tracking-wider block font-bold">Today Tariffs</span>
-              <div className="mt-1.5 space-y-0.5">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-neutral-500">Premium Petrol</span>
-                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹{rates.find(r => r.fuelType === 'petrol')?.rate || 104.25}/L</span>
+              <div className="flex flex-wrap items-center gap-3">
+                <div>
+                  <span className="text-[10px] text-neutral-400 font-bold block mb-0.5">Single Date</span>
+                  <input
+                    type="date"
+                    value={statsSingleDate}
+                    onChange={e => {
+                      setStatsSingleDate(e.target.value);
+                      setStatsStartDate("");
+                      setStatsEndDate("");
+                    }}
+                    className="px-2.5 py-1 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-medium focus:ring-1 focus:ring-indigo-500"
+                  />
                 </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-neutral-500">Regular Diesel</span>
-                  <span className="font-mono font-bold text-blue-600 dark:text-blue-400">₹{rates.find(r => r.fuelType === 'diesel')?.rate || 92.50}/L</span>
+                <div>
+                  <span className="text-[10px] text-neutral-400 font-bold block mb-0.5">Start Date</span>
+                  <input
+                    type="date"
+                    value={statsStartDate}
+                    onChange={e => {
+                      setStatsStartDate(e.target.value);
+                      setStatsSingleDate("");
+                    }}
+                    className="px-2.5 py-1 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-medium focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <span className="text-[10px] text-neutral-400 font-bold block mb-0.5">End Date</span>
+                  <input
+                    type="date"
+                    value={statsEndDate}
+                    onChange={e => {
+                      setStatsEndDate(e.target.value);
+                      setStatsSingleDate("");
+                    }}
+                    className="px-2.5 py-1 rounded-xl border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-medium focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+                {(statsSingleDate || statsStartDate || statsEndDate) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStatsSingleDate("");
+                      setStatsStartDate("");
+                      setStatsEndDate("");
+                    }}
+                    className="self-end px-3 py-1 rounded-xl bg-neutral-200 dark:bg-zinc-800 hover:bg-neutral-300 dark:hover:bg-zinc-700 font-bold text-xs flex items-center gap-1 cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" /> Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Total Tariff Sales Card */}
+              <div className="rounded-2xl border border-neutral-200/50 dark:border-zinc-800/40 p-4.5 bg-white dark:bg-zinc-900/60 shadow-sm relative overflow-hidden">
+                <span className="text-[10px] text-neutral-400 dark:text-zinc-500 uppercase tracking-wider block font-bold">Total Tariff sales</span>
+                <span className="text-xl font-bold font-display text-neutral-800 dark:text-zinc-100 block mt-1.5">
+                  ₹{displayStats.revenue.total.toLocaleString()}
+                </span>
+                <div className="flex justify-between items-center text-[10px] text-neutral-500 dark:text-zinc-400 mt-2 pt-2 border-t border-neutral-100 dark:border-zinc-800/50">
+                  <span>Cash: ₹{displayStats.revenue.cash.toLocaleString()}</span>
+                  <span>Online: ₹{displayStats.revenue.online.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Volume sold Card */}
+              <div className="rounded-2xl border border-neutral-200/50 dark:border-zinc-800/40 p-4.5 bg-white dark:bg-zinc-900/60 shadow-sm relative overflow-hidden">
+                <span className="text-[10px] text-neutral-400 dark:text-zinc-500 uppercase tracking-wider block font-bold">Total Fuel Sold</span>
+                <span className="text-xl font-bold font-display text-neutral-800 dark:text-zinc-100 block mt-1.5">
+                  {displayStats.fuel.total.toLocaleString()} <span className="text-xs font-sans text-neutral-400">Liters</span>
+                </span>
+                <div className="flex justify-between items-center text-[10px] text-neutral-500 dark:text-zinc-400 mt-2 pt-2 border-t border-neutral-100 dark:border-zinc-800/50">
+                  <span>Petrol: {displayStats.fuel.petrol.toLocaleString()} L</span>
+                  <span>Diesel: {displayStats.fuel.diesel.toLocaleString()} L</span>
+                </div>
+              </div>
+
+              {/* Credit Ledger Book Card */}
+              <div className="rounded-2xl border border-neutral-200/50 dark:border-zinc-800/40 p-4.5 bg-white dark:bg-zinc-900/60 shadow-sm relative overflow-hidden">
+                <span className="text-[10px] text-neutral-400 dark:text-zinc-500 uppercase tracking-wider block font-bold">Corporate Outstanding</span>
+                <span className="text-xl font-bold font-display text-rose-500 block mt-1.5">
+                  ₹{displayStats.credit.totalOutstanding.toLocaleString()}
+                </span>
+                <div className="flex justify-between items-center text-[10px] text-neutral-500 dark:text-zinc-400 mt-2 pt-2 border-t border-neutral-100 dark:border-zinc-800/50">
+                  <span>Registry: {displayStats.credit.customerCount} accounts</span>
+                  <span className="text-rose-400">OMCredit</span>
+                </div>
+              </div>
+
+              {/* Fuel Rates Card */}
+              <div className="rounded-2xl border border-neutral-200/50 dark:border-zinc-800/40 p-4.5 bg-white dark:bg-zinc-900/60 shadow-sm relative overflow-hidden">
+                <span className="text-[10px] text-neutral-400 dark:text-zinc-500 uppercase tracking-wider block font-bold">Today Tariffs</span>
+                <div className="mt-1.5 space-y-0.5">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-neutral-500">Premium Petrol</span>
+                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹{rates.find(r => r.fuelType === 'petrol')?.rate || 104.25}/L</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-neutral-500">Regular Diesel</span>
+                    <span className="font-mono font-bold text-blue-600 dark:text-blue-400">₹{rates.find(r => r.fuelType === 'diesel')?.rate || 92.50}/L</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -367,7 +493,7 @@ export default function App() {
 
         {/* Visual Analytics Graphs block - only available for Owner/Manager */}
         {['Owner', 'Manager'].includes(currentUser.role) && (
-          <DashboardAnalytics stats={stats} shifts={shifts} />
+          <DashboardAnalytics stats={displayStats} shifts={shifts} />
         )}
 
         {/* Dynamic Panel: Role specific views */}
@@ -634,33 +760,33 @@ export default function App() {
             {reportType === 'credit' && (
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-neutral-500 font-semibold">Corporate credit summaries</span>
+                  <span className="text-xs text-neutral-500 font-semibold">Credit Detailed Ledgers (Party Balances)</span>
                   <ExportButton 
-                    data={creditCustomers} 
-                    filename="credit_accounts_report" 
-                    headers={["Customer ID", "Name", "Contact", "Credit Limit", "Outstanding Balance"]} 
-                    keys={["id", "name", "contact", "creditLimit", "balance"]} 
-                    title="Corporate Credit Accounts Overview"
+                    data={creditCustomers.map(c => ({
+                      partyName: c.name,
+                      contactNo: c.contact || "-",
+                      amountBaki: `₹${c.balance.toLocaleString()}`
+                    }))} 
+                    filename="credit_parties_detailed_ledger" 
+                    headers={["Party Name", "Contact No.", "Amount Baki (₹)"]} 
+                    keys={["partyName", "contactNo", "amountBaki"]} 
+                    title="Credit Parties Detailed Ledger - Outstanding Balances"
                   />
                 </div>
                 <div className="overflow-x-auto rounded-xl border border-neutral-200/40 dark:border-zinc-800/40">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-neutral-50/70 dark:bg-zinc-900/50 text-neutral-500 dark:text-zinc-400 font-bold border-b border-neutral-200/40 dark:border-zinc-800/40">
-                        <th className="p-3">Customer ID</th>
-                        <th className="p-3">Client Company Name</th>
-                        <th className="p-3">Contact</th>
-                        <th className="p-3 text-right">Allowed Limit (INR)</th>
-                        <th className="p-3 text-right">Outstanding (INR)</th>
+                        <th className="p-3">Party Name</th>
+                        <th className="p-3">Contact No.</th>
+                        <th className="p-3 text-right">Amount Baki (₹)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-200/40 dark:divide-zinc-800/40">
                       {creditCustomers.map((c, idx) => (
                         <tr key={idx} className="hover:bg-neutral-50/20 dark:hover:bg-zinc-900/10 text-neutral-700 dark:text-zinc-300">
-                          <td className="p-3 font-mono text-neutral-400">{c.id}</td>
                           <td className="p-3 font-semibold">{c.name}</td>
-                          <td className="p-3">{c.contact}</td>
-                          <td className="p-3 text-right font-mono">₹{c.creditLimit.toLocaleString()}</td>
+                          <td className="p-3 font-mono text-neutral-500 dark:text-zinc-400">{c.contact || "-"}</td>
                           <td className="p-3 text-right font-mono font-semibold text-rose-500">₹{c.balance.toLocaleString()}</td>
                         </tr>
                       ))}

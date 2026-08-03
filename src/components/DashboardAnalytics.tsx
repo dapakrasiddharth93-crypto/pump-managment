@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -19,7 +19,7 @@ import {
   Legend,
   CartesianGrid
 } from "recharts";
-import { Fuel, Award, HelpCircle, Activity } from "lucide-react";
+import { Fuel, Award, HelpCircle, Activity, Calendar, Filter, RotateCcw } from "lucide-react";
 
 interface AnalyticsProps {
   stats: {
@@ -35,6 +35,11 @@ interface AnalyticsProps {
 }
 
 export default function DashboardAnalytics({ stats, shifts }: AnalyticsProps) {
+  // Shift Sales & Volume Trend Date Filters
+  const [trendSingleDate, setTrendSingleDate] = useState("");
+  const [trendStartDate, setTrendStartDate] = useState("");
+  const [trendEndDate, setTrendEndDate] = useState("");
+
   // Payment split data
   const paymentSplitData = [
     { name: "Cash Sales", value: stats.revenue.cash, color: "#10B981" }, // Emerald
@@ -58,29 +63,42 @@ export default function DashboardAnalytics({ stats, shifts }: AnalyticsProps) {
     }
   ];
 
-  // Recent Shift Trend Data
-  const shiftTrendData = [...shifts]
-    .filter(s => s.status === 'closed')
-    .slice(0, 6)
-    .reverse()
-    .map(s => ({
-      name: `${s.date.substring(5)} (${s.shiftName[0]})`,
-      Petrol: s.petrolLitersSold || 0,
-      Diesel: s.dieselLitersSold || 0,
-      Revenue: s.totalCollected || 0
-    }));
+  // Filtered Shift Trend Data based on Date filter
+  const filteredShiftsForTrend = [...shifts].filter(s => {
+    if (s.status !== 'closed' && s.status !== 'approved_by_manager' && s.status !== 'submitted_by_worker') return false;
+    if (trendSingleDate && s.date !== trendSingleDate) return false;
+    if (trendStartDate && s.date < trendStartDate) return false;
+    if (trendEndDate && s.date > trendEndDate) return false;
+    return true;
+  });
+
+  // Sort chronologically by date
+  const sortedTrendShifts = [...filteredShiftsForTrend].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // If no date filter is active and we have many shifts, show recent shifts
+  const displayShifts = (!trendSingleDate && !trendStartDate && !trendEndDate && sortedTrendShifts.length > 6)
+    ? sortedTrendShifts.slice(-6)
+    : sortedTrendShifts;
+
+  const shiftTrendData = displayShifts.map(s => ({
+    name: `${s.date.substring(5)} (${s.shiftName ? s.shiftName[0] : 'S'})`,
+    Petrol: s.petrolLitersSold || 0,
+    Diesel: s.dieselLitersSold || 0,
+    Revenue: s.totalCollected || 0
+  }));
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
       {/* Sales & Revenue Trend */}
-      <div className="lg:col-span-2 rounded-2xl border border-neutral-200/60 dark:border-zinc-800/60 p-5 glass-panel shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="lg:col-span-2 rounded-2xl border border-neutral-200/60 dark:border-zinc-800/60 p-5 glass-panel shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-display font-medium text-neutral-800 dark:text-zinc-200 text-base">
+            <h3 className="font-display font-medium text-neutral-800 dark:text-zinc-200 text-base flex items-center gap-2">
+              <Activity className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               Shift Sales & Volume Trend
             </h3>
             <p className="text-xs text-neutral-500 dark:text-zinc-400">
-              Fuel volume (Liters) recorded during the last 6 shifts
+              Fuel volume (Liters) recorded across recorded shifts
             </p>
           </div>
           <div className="flex gap-2 text-xs">
@@ -92,6 +110,67 @@ export default function DashboardAnalytics({ stats, shifts }: AnalyticsProps) {
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
               Diesel
             </span>
+          </div>
+        </div>
+
+        {/* Date Filter Bar for Shift Sales & Volume Trend */}
+        <div className="bg-neutral-100/70 dark:bg-zinc-900/70 p-3 rounded-xl border border-neutral-200/60 dark:border-zinc-800/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-1.5 font-bold text-neutral-600 dark:text-zinc-300">
+            <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+            <span>Trend Date Filter:</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div>
+              <span className="text-[10px] text-neutral-400 font-bold block mb-0.5">Single Date</span>
+              <input
+                type="date"
+                value={trendSingleDate}
+                onChange={e => {
+                  setTrendSingleDate(e.target.value);
+                  setTrendStartDate("");
+                  setTrendEndDate("");
+                }}
+                className="px-2 py-1 rounded-lg border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-[11px] font-medium"
+              />
+            </div>
+            <div>
+              <span className="text-[10px] text-neutral-400 font-bold block mb-0.5">Start Date</span>
+              <input
+                type="date"
+                value={trendStartDate}
+                onChange={e => {
+                  setTrendStartDate(e.target.value);
+                  setTrendSingleDate("");
+                }}
+                className="px-2 py-1 rounded-lg border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-[11px] font-medium"
+              />
+            </div>
+            <div>
+              <span className="text-[10px] text-neutral-400 font-bold block mb-0.5">End Date</span>
+              <input
+                type="date"
+                value={trendEndDate}
+                onChange={e => {
+                  setTrendEndDate(e.target.value);
+                  setTrendSingleDate("");
+                }}
+                className="px-2 py-1 rounded-lg border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-[11px] font-medium"
+              />
+            </div>
+            {(trendSingleDate || trendStartDate || trendEndDate) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTrendSingleDate("");
+                  setTrendStartDate("");
+                  setTrendEndDate("");
+                }}
+                className="self-end px-2.5 py-1 rounded-lg bg-neutral-200 dark:bg-zinc-800 hover:bg-neutral-300 font-bold text-[11px] flex items-center gap-1"
+                title="Reset Date Filter"
+              >
+                <RotateCcw className="w-3 h-3" /> Reset
+              </button>
+            )}
           </div>
         </div>
 
@@ -163,7 +242,7 @@ export default function DashboardAnalytics({ stats, shifts }: AnalyticsProps) {
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value: number) => `₹${value.toLocaleString()}`}
+                  formatter={(value: any) => `₹${Number(value || 0).toLocaleString()}`}
                   contentStyle={{ 
                     background: 'rgba(255,255,255,0.95)', 
                     border: '1px solid #e5e7eb',
@@ -219,7 +298,7 @@ export default function DashboardAnalytics({ stats, shifts }: AnalyticsProps) {
                 <XAxis dataKey="name" stroke="#888888" fontSize={11} tickLine={false} />
                 <YAxis stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
                 <Tooltip 
-                  formatter={(value: number) => `${value} Liters`}
+                  formatter={(value: any) => `${value || 0} Liters`}
                   contentStyle={{ 
                     background: 'rgba(255,255,255,0.95)', 
                     border: '1px solid #e5e7eb',

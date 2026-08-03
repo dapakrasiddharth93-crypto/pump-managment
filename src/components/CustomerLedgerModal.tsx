@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { CreditCustomer, CreditTransaction, Shift } from "../types.js";
-import { X, Download, DollarSign, FileText, ArrowDownLeft, ArrowUpRight, Phone, CreditCard } from "lucide-react";
+import { X, Download, DollarSign, FileText, ArrowDownLeft, ArrowUpRight, Phone, CreditCard, Printer } from "lucide-react";
 
 interface CustomerLedgerModalProps {
   customer: CreditCustomer;
@@ -76,6 +76,91 @@ export default function CustomerLedgerModal({
     }
   };
 
+  const exportPartyBalanceCSV = () => {
+    const csvLines = [
+      `"Party Name","Contact No.","Amount Baki (₹)"`,
+      `"${customer.name.replace(/"/g, '""')}","${(customer.contact || '-').replace(/"/g, '""')}","₹${finalBalance.toFixed(2)}"`
+    ];
+
+    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(csvLines.join("\n"));
+    const link = document.createElement("a");
+    link.setAttribute("href", csvContent);
+    link.setAttribute("download", `Party_Balance_${customer.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const printPartyStatement = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const htmlContent = `
+      <html>
+        <head>
+          <title>Credit Ledger - ${customer.name}</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; }
+            h1 { font-size: 20px; margin-bottom: 5px; color: #111; }
+            .info { font-size: 13px; color: #444; margin-bottom: 15px; line-height: 1.6; background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #e5e7eb; }
+            .badge { background: #ffe4e6; color: #be123c; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; font-size: 12px; }
+            th { background-color: #f3f4f6; font-weight: 600; }
+            .debit { color: #dc2626; font-weight: 600; }
+            .credit { color: #16a34a; font-weight: 600; }
+            .footer { margin-top: 25px; font-size: 11px; text-align: center; color: #888; border-top: 1px solid #eee; padding-top: 10px; }
+          </style>
+        </head>
+        <body>
+          <h1>OM PUSHPANJALI FILLING STATION</h1>
+          <div class="info">
+            <strong>Party Name:</strong> ${customer.name}<br>
+            <strong>Contact No.:</strong> ${customer.contact || '-'}<br>
+            <strong>Approved Credit Limit:</strong> ₹${customer.creditLimit.toLocaleString()}<br>
+            <strong>Amount Baki (Outstanding Balance):</strong> <span class="badge">₹${finalBalance.toLocaleString()}</span><br>
+            <strong>Generated Date:</strong> ${new Date().toLocaleString()}
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Reference / Shift</th>
+                <th>Remarks / Vehicle</th>
+                <th>Debit (+₹)</th>
+                <th>Credit (-₹)</th>
+                <th>Running Balance (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${ledgerEntries.map(e => `
+                <tr>
+                  <td>${e.date}</td>
+                  <td>${e.type === 'charge' ? 'Credit Fuel Sale' : 'Payment Received'}</td>
+                  <td>${e.refText}</td>
+                  <td>${e.remarks || '-'}</td>
+                  <td class="debit">${e.debit > 0 ? '₹' + e.debit.toFixed(2) : '-'}</td>
+                  <td class="credit">${e.credit > 0 ? '₹' + e.credit.toFixed(2) : '-'}</td>
+                  <td>₹${e.runningBalance.toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="footer">
+            Printed from OM Pushpanjali Filling Station Management System
+          </div>
+          <script>
+            window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 500); }
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   const exportSingleLedgerCSV = () => {
     const headers = [
       "Transaction ID",
@@ -138,13 +223,30 @@ export default function CustomerLedgerModal({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={exportPartyBalanceCSV}
+              className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+              title="Download Party Name, Contact No. & Outstanding Amount"
+            >
+              <Download className="w-4 h-4" /> Party Balance
+            </button>
             <button
               type="button"
               onClick={exportSingleLedgerCSV}
-              className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition-all"
+              className="px-3 py-2 rounded-xl bg-neutral-200 dark:bg-zinc-800 hover:bg-neutral-300 dark:hover:bg-zinc-700 text-neutral-700 dark:text-zinc-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Download Full Detailed Statement"
             >
-              <Download className="w-4 h-4" /> Download Statement
+              <Download className="w-4 h-4" /> CSV Statement
+            </button>
+            <button
+              type="button"
+              onClick={printPartyStatement}
+              className="px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-900 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              title="Print PDF / Paper Statement"
+            >
+              <Printer className="w-4 h-4" /> Print Statement
             </button>
             <button
               type="button"
