@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Camera, DollarSign, Fuel, ListTodo, Send, Image as ImageIcon, AlertCircle } from "lucide-react";
 import { FuelRate, Shift, Task, User } from "../types.js";
 import { api } from "../utils/api.js";
+import CameraCaptureModal from "./CameraCaptureModal.tsx";
 
 interface WorkerViewProps {
   currentUser: User;
@@ -32,6 +33,7 @@ export default function WorkerView({ currentUser, onRefreshStats }: WorkerViewPr
   const [submissionNotes, setSubmissionNotes] = useState("");
   const [taskPhoto, setTaskPhoto] = useState<File | null>(null);
   const [taskPhotoPreview, setTaskPhotoPreview] = useState<string | null>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [feedback, setFeedback] = useState({ text: "", type: "success" as "success" | "error" });
 
   const showFeedback = (text: string, type: "success" | "error" = "success") => {
@@ -333,21 +335,18 @@ export default function WorkerView({ currentUser, onRefreshStats }: WorkerViewPr
               Upload Work Photo (Camera or Gallery)
             </label>
             <div className="flex items-center gap-3">
-              <label className="cursor-pointer flex items-center gap-2 rounded-xl border border-neutral-300 dark:border-zinc-700 bg-neutral-100 dark:bg-zinc-800 px-4 py-2.5 text-xs font-bold text-neutral-700 dark:text-zinc-200 hover:bg-neutral-200 dark:hover:bg-zinc-700 transition-all">
-                <Camera className="h-4 w-4" />
-                Use Camera
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={(e) => handlePhotoSelect(e.target.files?.[0] || null)}
-                />
-              </label>
+              <button
+                type="button"
+                onClick={() => setIsCameraOpen(true)}
+                className="flex items-center gap-2 rounded-xl border border-neutral-300 dark:border-zinc-700 bg-neutral-100 dark:bg-zinc-800 px-4 py-2.5 text-xs font-bold text-neutral-700 dark:text-zinc-200 hover:bg-neutral-200 dark:hover:bg-zinc-700 transition-all"
+              >
+                <Camera className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                Use Laptop / Mobile Camera
+              </button>
 
               <label className="cursor-pointer flex items-center gap-2 rounded-xl border border-neutral-300 dark:border-zinc-700 bg-neutral-100 dark:bg-zinc-800 px-4 py-2.5 text-xs font-bold text-neutral-700 dark:text-zinc-200 hover:bg-neutral-200 dark:hover:bg-zinc-700 transition-all">
-                <ImageIcon className="h-4 w-4" />
-                Choose from Gallery
+                <ImageIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                Choose from Gallery / Files
                 <input
                   type="file"
                   accept="image/*"
@@ -356,6 +355,16 @@ export default function WorkerView({ currentUser, onRefreshStats }: WorkerViewPr
                 />
               </label>
             </div>
+
+            <CameraCaptureModal
+              isOpen={isCameraOpen}
+              onClose={() => setIsCameraOpen(false)}
+              onCapture={(file, dataUrl) => {
+                setTaskPhoto(file);
+                setTaskPhotoPreview(dataUrl);
+              }}
+              title="Task Work Photo Capture"
+            />
 
             {taskPhotoPreview && (
               <div className="mt-3">

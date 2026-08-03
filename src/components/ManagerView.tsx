@@ -4,6 +4,7 @@ import { CreditCustomer, FuelRate, Shift, Task, User as UserType, OnlinePaymentE
 import { api } from "../utils/api.js";
 import ExportButton from "./ExportButton.js";
 import CustomerLedgerModal from "./CustomerLedgerModal.js";
+import CameraCaptureModal from "./CameraCaptureModal.tsx";
 
 interface ManagerViewProps {
   currentUser: UserType;
@@ -153,6 +154,7 @@ export default function ManagerView({ currentUser, onRefreshStats }: ManagerView
   const [newOnlineRef, setNewOnlineRef] = useState("");
   const [newOnlineAmount, setNewOnlineAmount] = useState("");
   const [newOnlinePhoto, setNewOnlinePhoto] = useState<string | undefined>(undefined);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   // Credit parties state (Multiple Parties support)
   const [creditParties, setCreditParties] = useState<CreditPartyEntry[]>([]);
@@ -648,16 +650,26 @@ export default function ManagerView({ currentUser, onRefreshStats }: ManagerView
                     />
 
                     <div className="flex gap-1">
-                      <label className="cursor-pointer flex-1 flex items-center justify-center gap-1 rounded-xl border border-neutral-300 dark:border-zinc-700 bg-neutral-100 dark:bg-zinc-800 py-2 text-[11px] font-bold">
-                        <Camera className="h-3.5 w-3.5" /> Camera
-                        <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleOnlinePhotoSelect(e.target.files?.[0] || null)} />
-                      </label>
-                      <label className="cursor-pointer flex-1 flex items-center justify-center gap-1 rounded-xl border border-neutral-300 dark:border-zinc-700 bg-neutral-100 dark:bg-zinc-800 py-2 text-[11px] font-bold">
-                        <ImageIcon className="h-3.5 w-3.5" /> Gallery
+                      <button
+                        type="button"
+                        onClick={() => setIsCameraOpen(true)}
+                        className="flex-1 flex items-center justify-center gap-1 rounded-xl border border-neutral-300 dark:border-zinc-700 bg-neutral-100 dark:bg-zinc-800 py-2 text-[11px] font-bold text-neutral-700 dark:text-zinc-200 hover:bg-neutral-200 dark:hover:bg-zinc-700 transition-all"
+                      >
+                        <Camera className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" /> Camera
+                      </button>
+                      <label className="cursor-pointer flex-1 flex items-center justify-center gap-1 rounded-xl border border-neutral-300 dark:border-zinc-700 bg-neutral-100 dark:bg-zinc-800 py-2 text-[11px] font-bold text-neutral-700 dark:text-zinc-200 hover:bg-neutral-200 dark:hover:bg-zinc-700 transition-all">
+                        <ImageIcon className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Gallery
                         <input type="file" accept="image/*" className="hidden" onChange={e => handleOnlinePhotoSelect(e.target.files?.[0] || null)} />
                       </label>
                     </div>
                   </div>
+
+                  <CameraCaptureModal
+                    isOpen={isCameraOpen}
+                    onClose={() => setIsCameraOpen(false)}
+                    onCapture={(_file: File, dataUrl: string) => setNewOnlinePhoto(dataUrl)}
+                    title="Online Payment Receipt Photo Capture"
+                  />
 
                   {newOnlinePhoto && (
                     <div className="flex items-center gap-2">
