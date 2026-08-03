@@ -326,6 +326,20 @@ export default function OwnerView({ currentUser, onRefreshStats }: OwnerViewProp
     return true;
   });
 
+  // Shift Audit Modal Calculations
+  const grandNetTotalModal = selectedShiftModal ? (
+    selectedShiftModal.grandTotal ?? (
+      (selectedShiftModal.totalCollected || 0) + 
+      (selectedShiftModal.petrolTesting || 0) + 
+      (selectedShiftModal.dieselTesting || 0) + 
+      (selectedShiftModal.silak || 0)
+    )
+  ) : 0;
+
+  const shortExcessModal = selectedShiftModal ? (
+    grandNetTotalModal - (selectedShiftModal.expectedAmount || 0)
+  ) : 0;
+
   return (
     <div className="space-y-6">
       {/* Top feedback notification */}
@@ -459,29 +473,35 @@ export default function OwnerView({ currentUser, onRefreshStats }: OwnerViewProp
 
               <ExportButton 
                 filename="shift_audit_report" 
-                headers={["ID", "Shift Date", "Shift Name", "Machine", "Worker Name", "Manager Name", "Owner Name", "Status", "Approval Time", "Expected Amount", "Total Collected", "Cash", "Online", "Credit", "Petrol Testing", "Diesel Testing", "Silak", "Grand Total", "Short/Excess"]}
-                keys={["ID", "ShiftDate", "ShiftName", "Machine", "WorkerName", "ManagerName", "OwnerName", "Status", "ApprovalTime", "ExpectedAmount", "TotalCollected", "Cash", "Online", "Credit", "PetrolTesting", "DieselTesting", "Silak", "GrandTotal", "ShortExcess"]}
-                data={filteredShifts.map(s => ({
-                  ID: s.id,
-                  ShiftDate: s.date,
-                  ShiftName: s.shiftName,
-                  Machine: `Machine ${s.machineId}`,
-                  WorkerName: users.find(u => u.id === s.workerId)?.name || s.workerName || s.workerId,
-                  ManagerName: s.managerName || 'Pending',
-                  OwnerName: s.ownerName || 'Pending',
-                  Status: s.status,
-                  ApprovalTime: s.ownerApprovedAt || s.managerApprovedAt || s.submittedToManagerAt || 'N/A',
-                  ExpectedAmount: s.expectedAmount || 0,
-                  TotalCollected: s.totalCollected || 0,
-                  Cash: s.cashCollected || 0,
-                  Online: s.onlineCollected || 0,
-                  Credit: s.creditCollected || 0,
-                  PetrolTesting: s.petrolTesting || 0,
-                  DieselTesting: s.dieselTesting || 0,
-                  Silak: s.silak || 0,
-                  GrandTotal: s.grandTotal ?? ((s.totalCollected || 0) + (s.petrolTesting || 0) + (s.dieselTesting || 0) + (s.silak || 0)),
-                  ShortExcess: s.shortExcessAmount || 0
-                }))} 
+                headers={["ID", "Shift Date", "Shift Name", "Machine", "Worker Name", "Manager Name", "Owner Name", "Status", "Approval Time", "Expected Amount", "Total Collected", "Cash", "Online", "Credit", "Petrol Testing", "Diesel Testing", "Total Testing", "Silak", "Grand Net Total", "Short/Excess"]}
+                keys={["ID", "ShiftDate", "ShiftName", "Machine", "WorkerName", "ManagerName", "OwnerName", "Status", "ApprovalTime", "ExpectedAmount", "TotalCollected", "Cash", "Online", "Credit", "PetrolTesting", "DieselTesting", "TotalTesting", "Silak", "GrandTotal", "ShortExcess"]}
+                data={filteredShifts.map(s => {
+                  const totalTesting = (s.petrolTesting || 0) + (s.dieselTesting || 0);
+                  const grandNetTotal = s.grandTotal ?? ((s.totalCollected || 0) + totalTesting + (s.silak || 0));
+                  const calculatedShortExcess = grandNetTotal - (s.expectedAmount || 0);
+                  return {
+                    ID: s.id,
+                    ShiftDate: s.date,
+                    ShiftName: s.shiftName,
+                    Machine: `Machine ${s.machineId}`,
+                    WorkerName: users.find(u => u.id === s.workerId)?.name || s.workerName || s.workerId,
+                    ManagerName: s.managerName || 'Pending',
+                    OwnerName: s.ownerName || 'Pending',
+                    Status: s.status,
+                    ApprovalTime: s.ownerApprovedAt || s.managerApprovedAt || s.submittedToManagerAt || 'N/A',
+                    ExpectedAmount: s.expectedAmount || 0,
+                    TotalCollected: s.totalCollected || 0,
+                    Cash: s.cashCollected || 0,
+                    Online: s.onlineCollected || 0,
+                    Credit: s.creditCollected || 0,
+                    PetrolTesting: s.petrolTesting || 0,
+                    DieselTesting: s.dieselTesting || 0,
+                    TotalTesting: totalTesting,
+                    Silak: s.silak || 0,
+                    GrandTotal: grandNetTotal,
+                    ShortExcess: calculatedShortExcess
+                  };
+                })} 
               />
             </div>
 
@@ -982,14 +1002,14 @@ export default function OwnerView({ currentUser, onRefreshStats }: OwnerViewProp
               <p><strong>Manager Approval:</strong> {selectedShiftModal.managerName || 'Pending'} ({selectedShiftModal.managerApprovedAt ? new Date(selectedShiftModal.managerApprovedAt).toLocaleString() : 'N/A'})</p>
               <p><strong>Owner Audit:</strong> {selectedShiftModal.ownerName || 'Pending'} ({selectedShiftModal.ownerApprovedAt ? new Date(selectedShiftModal.ownerApprovedAt).toLocaleString() : 'N/A'})</p>
               <p><strong>Meter Readings:</strong> Petrol ({selectedShiftModal.petrolStartReading} → {selectedShiftModal.petrolEndReading || 'N/A'}), Diesel ({selectedShiftModal.dieselStartReading} → {selectedShiftModal.dieselEndReading || 'N/A'})</p>
-              <p><strong>Expected Tariff:</strong> ₹{(selectedShiftModal.expectedAmount || 0).toLocaleString()}</p>
-              <p><strong>Short / Excess:</strong> <span className={`font-bold ${Number(selectedShiftModal.shortExcessAmount || 0) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>₹{selectedShiftModal.shortExcessAmount || 0}</span></p>
-              <p className="md:col-span-2 font-medium"><strong>Collections:</strong> Cash ₹{selectedShiftModal.cashCollected || 0} • Online ₹{selectedShiftModal.onlineCollected || 0} • Credit ₹{selectedShiftModal.creditCollected || 0} (Collection Total: ₹{selectedShiftModal.totalCollected || 0})</p>
+              <p><strong>Total Expected Tariff:</strong> ₹{(selectedShiftModal.expectedAmount || 0).toLocaleString()}</p>
+              <p><strong>Short / Excess (Grand Net Total - Total Tariff):</strong> <span className={`font-bold ${shortExcessModal < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>₹{shortExcessModal.toLocaleString()} {shortExcessModal < 0 ? '(Short)' : shortExcessModal > 0 ? '(Excess)' : '(Matched)'}</span></p>
+              <p className="md:col-span-2 font-medium"><strong>Collections (Revenue):</strong> Cash ₹{selectedShiftModal.cashCollected || 0} • Online ₹{selectedShiftModal.onlineCollected || 0} • Credit ₹{selectedShiftModal.creditCollected || 0} (Revenue Total: ₹{selectedShiftModal.totalCollected || 0})</p>
               <p className="md:col-span-2 font-medium text-amber-700 dark:text-amber-400">
                 <strong>Testing & Silak:</strong> Petrol Testing ₹{selectedShiftModal.petrolTesting || 0} • Diesel Testing ₹{selectedShiftModal.dieselTesting || 0} • Silak ₹{selectedShiftModal.silak || 0}
               </p>
               <p className="md:col-span-2 font-bold text-emerald-700 dark:text-emerald-400 text-sm bg-emerald-50 dark:bg-emerald-950/40 p-2 rounded-xl border border-emerald-200 dark:border-emerald-800/60">
-                <strong>Grand Net Total (Revenue + Testing + Silak):</strong> ₹{(selectedShiftModal.grandTotal ?? ((selectedShiftModal.totalCollected || 0) + (selectedShiftModal.petrolTesting || 0) + (selectedShiftModal.dieselTesting || 0) + (selectedShiftModal.silak || 0))).toLocaleString()}
+                <strong>Grand Net Total (Revenue + Testing + Silak):</strong> ₹{grandNetTotalModal.toLocaleString()}
               </p>
               {selectedShiftModal.notes && <p className="md:col-span-2 p-2 rounded bg-white dark:bg-zinc-900 border border-neutral-200 dark:border-zinc-800"><strong>Audit Notes:</strong> {selectedShiftModal.notes}</p>}
             </div>

@@ -475,10 +475,58 @@ export default function App() {
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-neutral-500 font-semibold">Listing all shifts matching filters</span>
                   <ExportButton 
-                    data={getFilteredShifts()} 
+                    data={getFilteredShifts().map(s => {
+                      const totalTesting = (s.petrolTesting || 0) + (s.dieselTesting || 0);
+                      const totalSilak = s.silak || 0;
+                      const grandTotal = s.grandTotal ?? ((s.totalCollected || 0) + totalTesting + totalSilak);
+                      const calculatedVariance = grandTotal - (s.expectedAmount || 0);
+                      return {
+                        date: s.date,
+                        shiftName: s.shiftName,
+                        machineId: s.machineId,
+                        petrolLitersSold: s.petrolLitersSold ?? 0,
+                        dieselLitersSold: s.dieselLitersSold ?? 0,
+                        expectedAmount: s.expectedAmount ?? 0,
+                        totalCollected: s.totalCollected ?? 0,
+                        totalTesting,
+                        totalSilak,
+                        grandTotal,
+                        shortExcessAmount: calculatedVariance,
+                        status: s.status,
+                        approvedBy: s.approvedBy || 'Pending'
+                      };
+                    })} 
                     filename="shift_audits_report" 
-                    headers={["Date", "Shift", "Machine", "Petrol Sold (L)", "Diesel Sold (L)", "Expected Amount", "Actual Collected", "Variance Gap", "Status", "Audited By"]} 
-                    keys={["date", "shiftName", "machineId", "petrolLitersSold", "dieselLitersSold", "expectedAmount", "totalCollected", "shortExcessAmount", "status", "approvedBy"]} 
+                    headers={[
+                      "Date", 
+                      "Shift", 
+                      "Machine", 
+                      "Petrol Sold (L)", 
+                      "Diesel Sold (L)", 
+                      "Expected Tarif (INR)", 
+                      "Revenue Collected (INR)", 
+                      "Total Testing (INR)", 
+                      "Total Silak (INR)", 
+                      "Grand Total (INR)", 
+                      "Variance Gap (INR)", 
+                      "Status", 
+                      "Audited By"
+                    ]} 
+                    keys={[
+                      "date", 
+                      "shiftName", 
+                      "machineId", 
+                      "petrolLitersSold", 
+                      "dieselLitersSold", 
+                      "expectedAmount", 
+                      "totalCollected", 
+                      "totalTesting", 
+                      "totalSilak", 
+                      "grandTotal", 
+                      "shortExcessAmount", 
+                      "status", 
+                      "approvedBy"
+                    ]} 
                     title="Consolidated Shift-wise Operational Audits"
                   />
                 </div>
@@ -493,34 +541,47 @@ export default function App() {
                         <th className="p-3 text-right">Diesel Sold (L)</th>
                         <th className="p-3 text-right">Expected (INR)</th>
                         <th className="p-3 text-right">Collected (INR)</th>
-                        <th className="p-3 text-right">Variance</th>
+                        <th className="p-3 text-right">Total Testing (INR)</th>
+                        <th className="p-3 text-right">Total Silak (INR)</th>
+                        <th className="p-3 text-right font-bold text-indigo-600 dark:text-indigo-400">Grand Total (INR)</th>
+                        <th className="p-3 text-right font-bold">Variance</th>
                         <th className="p-3 text-center">Audit Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-200/40 dark:divide-zinc-800/40">
-                      {getFilteredShifts().map((s, idx) => (
-                        <tr key={idx} className="hover:bg-neutral-50/20 dark:hover:bg-zinc-900/10 text-neutral-700 dark:text-zinc-300">
-                          <td className="p-3">{s.date}</td>
-                          <td className="p-3 font-semibold">{s.shiftName}</td>
-                          <td className="p-3">#{s.machineId}</td>
-                          <td className="p-3 text-right font-mono">{s.petrolLitersSold ?? "-"} L</td>
-                          <td className="p-3 text-right font-mono">{s.dieselLitersSold ?? "-"} L</td>
-                          <td className="p-3 text-right font-mono">₹{s.expectedAmount?.toLocaleString() ?? "-"}</td>
-                          <td className="p-3 text-right font-mono">₹{s.totalCollected?.toLocaleString() ?? "-"}</td>
-                          <td className={`p-3 text-right font-mono font-bold ${
-                            (s.shortExcessAmount || 0) < 0 ? 'text-rose-500' : (s.shortExcessAmount || 0) > 0 ? 'text-emerald-500' : ''
-                          }`}>
-                            ₹{s.shortExcessAmount?.toLocaleString() ?? "0"}
-                          </td>
-                          <td className="p-3 text-center">
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                              s.approvedBy ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                      {getFilteredShifts().map((s, idx) => {
+                        const totalTesting = (s.petrolTesting || 0) + (s.dieselTesting || 0);
+                        const totalSilak = s.silak || 0;
+                        const grandTotal = s.grandTotal ?? ((s.totalCollected || 0) + totalTesting + totalSilak);
+                        const calculatedVariance = grandTotal - (s.expectedAmount || 0);
+
+                        return (
+                          <tr key={idx} className="hover:bg-neutral-50/20 dark:hover:bg-zinc-900/10 text-neutral-700 dark:text-zinc-300">
+                            <td className="p-3">{s.date}</td>
+                            <td className="p-3 font-semibold">{s.shiftName}</td>
+                            <td className="p-3">#{s.machineId}</td>
+                            <td className="p-3 text-right font-mono">{s.petrolLitersSold ?? "-"} L</td>
+                            <td className="p-3 text-right font-mono">{s.dieselLitersSold ?? "-"} L</td>
+                            <td className="p-3 text-right font-mono font-medium">₹{s.expectedAmount?.toLocaleString() ?? "0"}</td>
+                            <td className="p-3 text-right font-mono">₹{s.totalCollected?.toLocaleString() ?? "0"}</td>
+                            <td className="p-3 text-right font-mono text-amber-600 dark:text-amber-400 font-medium">₹{totalTesting.toLocaleString()}</td>
+                            <td className="p-3 text-right font-mono text-amber-600 dark:text-amber-400 font-medium">₹{totalSilak.toLocaleString()}</td>
+                            <td className="p-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">₹{grandTotal.toLocaleString()}</td>
+                            <td className={`p-3 text-right font-mono font-bold ${
+                              calculatedVariance < 0 ? 'text-rose-500' : calculatedVariance > 0 ? 'text-emerald-500' : 'text-neutral-500'
                             }`}>
-                              {s.approvedBy ? `Audited (${s.approvedBy})` : 'Pending Audit'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                              ₹{calculatedVariance.toLocaleString()}
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                                s.approvedBy ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {s.approvedBy ? `Audited (${s.approvedBy})` : 'Pending Audit'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

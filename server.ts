@@ -344,7 +344,7 @@ app.post("/api/shifts/approve-manager", (req, res) => {
 
   const total = Number((cash + online + credit).toFixed(2));
   const grandTotalVal = Number((total + pTesting + dTesting + silakVal).toFixed(2));
-  const shortExcess = Number((total - expectedAmount).toFixed(2));
+  const shortExcess = Number((grandTotalVal - expectedAmount).toFixed(2));
 
   shift.status = "approved_by_manager";
   shift.managerName = currentUsername;
