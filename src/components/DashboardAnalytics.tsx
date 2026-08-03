@@ -40,11 +40,39 @@ export default function DashboardAnalytics({ stats, shifts }: AnalyticsProps) {
   const [trendStartDate, setTrendStartDate] = useState("");
   const [trendEndDate, setTrendEndDate] = useState("");
 
+  // Payment Mode Share Date Filters
+  const [paySingleDate, setPaySingleDate] = useState("");
+  const [payStartDate, setPayStartDate] = useState("");
+  const [payEndDate, setPayEndDate] = useState("");
+
+  // Dynamic calculation for Payment Revenue based on Payment Mode date filter
+  const getPaymentRevenue = () => {
+    if (!paySingleDate && !payStartDate && !payEndDate) {
+      return stats.revenue;
+    }
+    const filteredShifts = shifts.filter(s => {
+      if (s.status !== 'closed' && s.status !== 'approved_by_manager' && s.status !== 'submitted_by_worker') return false;
+      if (paySingleDate && s.date !== paySingleDate) return false;
+      if (payStartDate && s.date < payStartDate) return false;
+      if (payEndDate && s.date > payEndDate) return false;
+      return true;
+    });
+
+    const cash = filteredShifts.reduce((acc, s) => acc + (s.cashCollected || 0), 0);
+    const online = filteredShifts.reduce((acc, s) => acc + (s.onlineCollected || 0), 0);
+    const credit = filteredShifts.reduce((acc, s) => acc + (s.creditCollected || 0), 0);
+    const total = cash + online + credit;
+
+    return { total, cash, online, credit };
+  };
+
+  const payRevenue = getPaymentRevenue();
+
   // Payment split data
   const paymentSplitData = [
-    { name: "Cash Sales", value: stats.revenue.cash, color: "#10B981" }, // Emerald
-    { name: "Online UPI", value: stats.revenue.online, color: "#3B82F6" }, // Blue
-    { name: "Credit Book", value: stats.revenue.credit, color: "#F59E0B" } // Amber
+    { name: "Cash Sales", value: payRevenue.cash, color: "#10B981" }, // Emerald
+    { name: "Online UPI", value: payRevenue.online, color: "#3B82F6" }, // Blue
+    { name: "Credit Book", value: payRevenue.credit, color: "#F59E0B" } // Amber
   ].filter(item => item.value > 0);
 
   // Machine Comparison Data
@@ -214,14 +242,69 @@ export default function DashboardAnalytics({ stats, shifts }: AnalyticsProps) {
       </div>
 
       {/* Payment Split Pie */}
-      <div className="rounded-2xl border border-neutral-200/60 dark:border-zinc-800/60 p-5 glass-panel shadow-sm flex flex-col justify-between">
+      <div className="rounded-2xl border border-neutral-200/60 dark:border-zinc-800/60 p-5 glass-panel shadow-sm flex flex-col justify-between space-y-3">
         <div>
           <h3 className="font-display font-medium text-neutral-800 dark:text-zinc-200 text-base mb-1">
             Payment Mode Share
           </h3>
-          <p className="text-xs text-neutral-500 dark:text-zinc-400 mb-4">
+          <p className="text-xs text-neutral-500 dark:text-zinc-400 mb-2">
             Collection channels across approved sales
           </p>
+
+          {/* Date Filter Bar for Payment Mode Share */}
+          <div className="bg-neutral-100/70 dark:bg-zinc-900/70 p-2 rounded-xl border border-neutral-200/60 dark:border-zinc-800/60 flex flex-wrap items-center justify-between gap-1.5 text-xs mt-1">
+            <div className="flex items-center gap-1 font-bold text-neutral-600 dark:text-zinc-300 text-[10px]">
+              <Calendar className="w-3 h-3 text-indigo-500" />
+              <span>Date Filter:</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <input
+                type="date"
+                value={paySingleDate}
+                title="Single Date"
+                onChange={e => {
+                  setPaySingleDate(e.target.value);
+                  setPayStartDate("");
+                  setPayEndDate("");
+                }}
+                className="px-1.5 py-0.5 rounded-md border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-[10px] font-medium"
+              />
+              <input
+                type="date"
+                value={payStartDate}
+                title="Start Date"
+                onChange={e => {
+                  setPayStartDate(e.target.value);
+                  setPaySingleDate("");
+                }}
+                className="px-1.5 py-0.5 rounded-md border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-[10px] font-medium"
+              />
+              <input
+                type="date"
+                value={payEndDate}
+                title="End Date"
+                onChange={e => {
+                  setPayEndDate(e.target.value);
+                  setPaySingleDate("");
+                }}
+                className="px-1.5 py-0.5 rounded-md border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-[10px] font-medium"
+              />
+              {(paySingleDate || payStartDate || payEndDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaySingleDate("");
+                    setPayStartDate("");
+                    setPayEndDate("");
+                  }}
+                  className="px-1.5 py-0.5 rounded-md bg-neutral-200 dark:bg-zinc-800 hover:bg-neutral-300 font-bold text-[10px] flex items-center gap-0.5 cursor-pointer"
+                  title="Reset Filter"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="h-44 w-full relative flex items-center justify-center">
@@ -259,7 +342,7 @@ export default function DashboardAnalytics({ stats, shifts }: AnalyticsProps) {
           <div className="absolute text-center">
             <span className="text-[10px] text-neutral-400 dark:text-zinc-500 block uppercase tracking-wider">Total Revenue</span>
             <span className="text-lg font-bold font-display text-neutral-800 dark:text-zinc-100">
-              ₹{stats.revenue.total.toLocaleString()}
+              ₹{payRevenue.total.toLocaleString()}
             </span>
           </div>
         </div>
@@ -272,7 +355,7 @@ export default function DashboardAnalytics({ stats, shifts }: AnalyticsProps) {
                 {item.name}
               </span>
               <span className="font-semibold text-neutral-800 dark:text-zinc-200">
-                ₹{item.value.toLocaleString()} ({((item.value / (stats.revenue.total || 1)) * 100).toFixed(1)}%)
+                ₹{item.value.toLocaleString()} ({((item.value / (payRevenue.total || 1)) * 100).toFixed(1)}%)
               </span>
             </div>
           ))}
